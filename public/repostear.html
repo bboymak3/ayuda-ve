@@ -238,6 +238,9 @@
 
   <script src="/js/main.js"></script>
   <script>
+    // Variables globales (declaradas arriba para evitar TDZ)
+    let iframesDetectados = [];
+
     // Verificar auth
     const token = localStorage.getItem('ayudave_admin_token');
     if (token) {
@@ -346,24 +349,6 @@
       }
     }
     switchTipo();
-
-    // Cuando se extrae la URL del embed, auto-generar título
-    const originalExtraerUrl = extraerUrlDeEmbed;
-    extraerUrlDeEmbed = function() {
-      originalExtraerUrl();
-      const url = document.getElementById('url_origen').value;
-      if (url && !document.getElementById('titulo').value) {
-        // Generar título descriptivo de la URL
-        // Ej: https://www.facebook.com/JoseElLegionario/posts/123 → "Post de JoseElLegionario"
-        const m = url.match(/facebook\.com\/([^\/]+)\/posts/i);
-        if (m) {
-          const usuario = m[1].replace(/[._-]/g, ' ');
-          const tituloGen = `Post de ${usuario} (Facebook)`;
-          document.getElementById('titulo').value = tituloGen;
-          showToast(`✅ Título auto-generado: "${tituloGen}"`, 'info', 4000);
-        }
-      }
-    };
 
     // Checkbox crear_chulito
     document.getElementById('crear_chulito').addEventListener('change', (e) => {
@@ -503,7 +488,6 @@
     // ============================================================
     // MODO MÚLTIPLE: detectar varios iframes en un texto grande
     // ============================================================
-    let iframesDetectados = [];
 
     function onMultipleChange() {
       const texto = document.getElementById('multiple_embed').value;
