@@ -42,8 +42,10 @@
         <a href="#" data-tab="dashboard" class="active">📊 Dashboard</a>
         <a href="#" data-tab="moderar">⏳ Moderar</a>
         <a href="#" data-tab="chulitos">📍 Chulitos</a>
+        <a href="#" data-tab="perfiles">👤 Perfiles</a>
+        <a href="#" data-tab="abuso">🚩 Abusos</a>
         <a href="#" data-tab="carga-rapida">⚡ Carga rápida</a>
-        <a href="#" data-tab="video">🎥 Procesar video</a>
+        <a href="#" data-tab="video">🎥 Procesar video IA</a>
         <a href="#" data-tab="categorias">📦 Categorías</a>
         <a href="#" data-tab="settings">⚙️ Configuración</a>
         <hr style="border:none;border-top:1px solid var(--color-border);margin:8px 0">
@@ -253,6 +255,30 @@
             </div>
             <button type="submit" class="btn btn-primary">💾 Guardar configuración</button>
           </form>
+        </div>
+
+        <div id="tab-perfiles" class="tab-content hidden">
+          <h2 class="section-title">👤 Perfiles con seguimiento</h2>
+          <p class="section-subtitle">Perfiles que se generan automáticamente cuando una persona/organización hace múltiples reportes.</p>
+          <div class="flex gap-1 mb-2">
+            <input type="text" id="perfil-search" class="form-input" placeholder="Buscar por nombre, teléfono, ubicación..." oninput="searchPerfiles()">
+          </div>
+          <div id="perfiles-list" class="loading-state">Cargando...</div>
+        </div>
+
+        <div id="tab-abuso" class="tab-content hidden">
+          <h2 class="section-title">🚩 Reportes de abuso</h2>
+          <p class="section-subtitle">Reportes de abuso, estafa, suplantación enviados por usuarios.</p>
+          <div class="flex gap-1 mb-2">
+            <select id="abuso-filter-estado" class="form-select" style="max-width:200px" onchange="loadAbusos()">
+              <option value="">Todos los estados</option>
+              <option value="pendiente">⏳ Pendientes</option>
+              <option value="revisado">✅ Revisados</option>
+              <option value="accionado">⚡ Accionados</option>
+              <option value="descartado">🗑 Descartados</option>
+            </select>
+          </div>
+          <div id="abuso-list" class="loading-state">Cargando...</div>
         </div>
 
         <div id="tab-logs" class="tab-content hidden">

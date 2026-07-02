@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reportar Abuso — Ayuda VE</title>
+  <meta name="description" content="Reporta abuso, estafa, suplantación o contenido inapropiado en la plataforma Ayuda VE.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚩</text></svg>">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo"><span class="logo-icon">🤝</span><span>Ayuda VE</span></a>
+      <nav class="nav" id="nav">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/mapa.html" class="nav-link">Mapa</a>
+        <a href="/buscar.html" class="nav-link">Buscar</a>
+        <a href="/reportar.html" class="nav-link">Reportar</a>
+        <a href="/admin/" class="nav-link">Admin</a>
+      </nav>
+      <button class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('mobile-open')">☰</button>
+    </div>
+  </header>
+
+  <div class="container-narrow">
+    <h1 class="section-title">🚩 Reportar Abuso</h1>
+    <p class="section-subtitle">Si detectas una estafa, suplantación, información falsa o contenido inapropiado, repórtalo aquí. Tu reporte será revisado por el administrador.</p>
+
+    <div class="alert alert-warning mb-2">
+      ⚠️ <strong>Importante:</strong> Los reportes falsos o malintencionados también son una forma de abuso. Usa esta herramienta con responsabilidad.
+    </div>
+
+    <form id="form-abuso" onsubmit="submitAbuso(event); return false;">
+      <div class="form-group">
+        <label class="form-label">Tipo de abuso <span class="req">*</span></label>
+        <select name="tipo" class="form-select" required>
+          <option value="">Selecciona el tipo...</option>
+          <option value="estafa">💸 Estafa (piden dinero/donaciones falsas)</option>
+          <option value="suplantacion">🎭 Suplantación (se hacen pasar por otra persona)</option>
+          <option value="info_falsa">❌ Información falsa</option>
+          <option value="contenido_inapropiado">🔞 Contenido inapropiado</option>
+          <option value="acoso">😠 Acoso o amenazas</option>
+          <option value="otro"> Otro</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">¿Qué estás reportando? <span class="req">*</span></label>
+        <select name="entidad_tipo" class="form-select" id="entidad-tipo">
+          <option value="">Selecciona...</option>
+          <option value="reporte">📝 Un reporte específico</option>
+          <option value="chulito">📍 Un chulito del mapa</option>
+          <option value="perfil">👤 Un perfil/persona</option>
+          <option value="url_externa">🔗 Una URL externa (Facebook, etc.)</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="entidad-id-group" style="display:none">
+        <label class="form-label">ID del contenido (si lo conoces)</label>
+        <input name="entidad_id" type="number" class="form-input" placeholder="Ej: 123">
+        <div class="form-help">Puedes encontrar el ID en la URL del contenido. Ejemplo: /reporte/<strong>123</strong></div>
+      </div>
+
+      <div class="form-group" id="url-referencia-group" style="display:none">
+        <label class="form-label">URL de referencia</label>
+        <input name="url_referencia" type="url" class="form-input" placeholder="https://...">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Descripción detallada <span class="req">*</span></label>
+        <textarea name="descripcion" class="form-textarea" required minlength="10" maxlength="5000"
+          placeholder="Explica qué pasó, por qué consideras que es abuso, qué evidencia tienes, etc."></textarea>
+        <div class="form-help">Mínimo 10 caracteres. Sé específico para que podamos tomar acción.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Evidencia (fotos/screenshots)</label>
+        <input type="file" id="evidencia-files" accept="image/*" multiple class="form-input">
+        <div class="form-help">Puedes subir hasta 5 imágenes. Se guardan en R2 (almacenamiento seguro).</div>
+        <div id="evidencia-preview" class="mt-1"></div>
+      </div>
+
+      <hr class="mb-2 mt-2" style="border:none;border-top:1px solid var(--color-border)">
+
+      <div class="form-group">
+        <label class="form-label">¿Cómo quieres reportar?</label>
+        <div class="flex gap-1">
+          <label style="flex:1;padding:10px;border:1px solid var(--color-border);border-radius:6px;cursor:pointer;text-align:center" id="lbl-anonimo">
+            <input type="radio" name="anonimo_radio" value="true" checked onchange="toggleAnonimo(true)">
+            <strong>🔒 Anónimo</strong>
+            <div class="text-sm text-muted">No doy mis datos</div>
+          </label>
+          <label style="flex:1;padding:10px;border:1px solid var(--color-border);border-radius:6px;cursor:pointer;text-align:center" id="lbl-identificado">
+            <input type="radio" name="anonimo_radio" value="false" onchange="toggleAnonimo(false)">
+            <strong>👤 Con mi nombre</strong>
+            <div class="text-sm text-muted">Para dar más credibilidad</div>
+          </label>
+        </div>
+      </div>
+
+      <div id="datos-identificacion" style="display:none">
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Nombre</label>
+            <input name="reportante_nombre" type="text" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Apellido</label>
+            <input name="reportante_apellido" type="text" class="form-input">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Teléfono</label>
+            <input name="reportante_telefono" type="tel" class="form-input" placeholder="0414-XXX-XXXX">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input name="reportante_email" type="email" class="form-input">
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-warning btn-lg btn-block">🚩 Enviar reporte</button>
+    </form>
+
+    <div id="resultado"></div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    // Detectar parámetros URL para pre-llenar
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('entidad_tipo')) {
+      document.getElementById('entidad-tipo').value = params.get('entidad_tipo');
+      document.getElementById('entidad-tipo').dispatchEvent(new Event('change'));
+    }
+    if (params.get('entidad_id')) {
+      document.querySelector('[name="entidad_id"]').value = params.get('entidad_id');
+    }
+
+    // Mostrar/ocultar campos según entidad_tipo
+    document.getElementById('entidad-tipo').addEventListener('change', (e) => {
+      const v = e.target.value;
+      document.getElementById('entidad-id-group').style.display =
+        ['reporte','chulito','perfil'].includes(v) ? '' : 'none';
+      document.getElementById('url-referencia-group').style.display =
+        (v === 'url_externa') ? '' : 'none';
+    });
+    document.getElementById('entidad-tipo').dispatchEvent(new Event('change'));
+
+    // Toggle anónimo
+    function toggleAnonimo(anonimo) {
+      document.getElementById('datos-identificacion').style.display = anonimo ? 'none' : '';
+      document.getElementById('lbl-anonimo').style.background = anonimo ? '#fef3c7' : '';
+      document.getElementById('lbl-identificado').style.background = !anonimo ? '#fef3c7' : '';
+    }
+
+    // Subir evidencias a R2
+    let evidenciasUrls = [];
+    document.getElementById('evidencia-files').addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files).slice(0, 5);
+      if (files.length === 0) return;
+
+      const preview = document.getElementById('evidencia-preview');
+      preview.innerHTML = '<div class="spinner spinner-dark"></div> Subiendo...';
+
+      evidenciasUrls = [];
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+          const res = await fetch('/api/upload', { method: 'POST', body: formData });
+          const data = await res.json();
+          if (data.ok) evidenciasUrls.push(data.url);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      preview.innerHTML = evidenciasUrls.map(u =>
+        `<img src="${u}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;margin-right:4px;border:1px solid #e2e8f0">`
+      ).join('');
+    });
+
+    // Submit
+    async function submitAbuso(event) {
+      event.preventDefault();
+      const form = event.target;
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Enviando...';
+
+      const formData = new FormData(form);
+      const body = Object.fromEntries(formData.entries());
+
+      // Agregar evidencias
+      body.evidencia_urls = evidenciasUrls.length ? evidenciasUrls : undefined;
+
+      // Convertir anonimo_radio a booleano
+      body.anonimo = body.anonimo_radio === 'true';
+      delete body.anonimo_radio;
+
+      // Limpiar datos de identificación si es anónimo
+      if (body.anonimo) {
+        delete body.reportante_nombre;
+        delete body.reportante_apellido;
+        delete body.reportante_telefono;
+        delete body.reportante_email;
+      }
+
+      try {
+        const res = await fetch('/api/abuso', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error');
+
+        document.getElementById('resultado').innerHTML = `
+          <div class="alert alert-success mt-2">
+            <h3>✅ ${data.message}</h3>
+            <p class="mt-1">ID de tu reporte: <strong>#${data.id}</strong></p>
+            <p class="text-muted">El administrador revisará tu reporte lo antes posible.</p>
+            <a href="/" class="btn btn-primary mt-1">Volver al inicio</a>
+          </div>
+        `;
+        form.reset();
+        evidenciasUrls = [];
+        document.getElementById('evidencia-preview').innerHTML = '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (e) {
+        showToast('❌ ' + e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚩 Enviar reporte';
+      }
+    }
+  </script>
+</body>
+</html>

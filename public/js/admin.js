@@ -114,6 +114,8 @@ function switchTab(tab) {
   if (tab === 'dashboard') loadDashboard();
   if (tab === 'moderar') loadModerar();
   if (tab === 'chulitos') loadChulitosAdmin();
+  if (tab === 'perfiles') loadPerfilesAdmin();
+  if (tab === 'abuso') loadAbusos();
   if (tab === 'categorias') loadCategoriasAdmin();
   if (tab === 'settings') loadSettingsAdmin();
   if (tab === 'logs') loadLogs();
@@ -389,19 +391,53 @@ async function procesarVideo(event) {
     if (!res.ok) throw new Error(data.error || 'Error');
 
     result.innerHTML = `
-      <div class="alert alert-success">✅ Procesado correctamente</div>
-      <div class="card">
-        <h3>📝 Transcripción</h3>
-        <div style="padding:1rem;background:#f8fafc;border-radius:8px;white-space:pre-wrap;font-size:0.95rem">${escapeHtml(data.transcripcion)}</div>
+      <div class="alert alert-success">
+        ✅ <strong>¡Procesado correctamente!</strong>
       </div>
+
+      ${data.ficha_creada ? `
+        <div class="card" style="border-left:4px solid var(--color-success);background:#ecfdf5">
+          <h3 class="card-title">📄 Ficha creada automáticamente</h3>
+          <p><strong>ID:</strong> #${data.ficha_creada.id}</p>
+          <p><strong>Título:</strong> ${escapeHtml(data.ficha_creada.titulo)}</p>
+          <p><strong>Categoría:</strong> <code>${escapeHtml(data.ficha_creada.categoria || 'N/A')}</code></p>
+          <p><strong>Urgencia:</strong> <span class="urgencia-pill urgencia-${data.ficha_creada.urgencia}">${data.ficha_creada.urgencia}</span></p>
+          <div class="card-actions mt-2">
+            <a href="${data.ficha_creada.url}" target="_blank" class="btn btn-primary">🔗 Abrir ficha →</a>
+            <button onclick="navigator.clipboard.writeText('${data.ficha_creada.url_completa}');showToast('URL copiada','success')" class="btn btn-outline">📋 Copiar URL</button>
+          </div>
+        </div>
+      ` : ''}
+
+      ${data.perfil ? `
+        <div class="card mt-2" style="border-left:4px solid ${data.perfil.es_reiterativo ? 'var(--color-warning)' : 'var(--color-primary)'};background:${data.perfil.es_reiterativo ? '#fffbeb' : '#eff6ff'}">
+          <h3 class="card-title">${data.perfil.es_reiterativo ? '📊' : '👤'} Perfil ${data.perfil.es_reiterativo ? 'reiterativo detectado' : 'creado'}</h3>
+          <p><strong>Nombre:</strong> ${escapeHtml(data.perfil.nombre)}</p>
+          ${data.perfil.telefono ? `<p><strong>Teléfono:</strong> ${escapeHtml(data.perfil.telefono)}</p>` : ''}
+          <p><strong>Total reportes:</strong> ${data.perfil.total_reportes}</p>
+          <p><strong>Detección:</strong> ${escapeHtml(data.perfil.match_strategy)}</p>
+          ${data.perfil.es_reiterativo ? '<p class="text-warning" style="color:#92400e">⚠️ Esta persona ya tiene reportes previos. Revisa el historial.</p>' : ''}
+          <div class="card-actions mt-2">
+            <a href="${data.perfil.url}" target="_blank" class="btn btn-primary">👤 Ver perfil completo →</a>
+          </div>
+        </div>
+      ` : ''}
+
       <div class="card mt-2">
-        <h3>🤖 Resumen IA</h3>
+        <h3 class="card-title">📝 Transcripción completa (${data.longitud} caracteres)</h3>
+        <div style="padding:1rem;background:#f8fafc;border-radius:8px;white-space:pre-wrap;font-size:0.95rem;max-height:300px;overflow:auto">${escapeHtml(data.transcripcion)}</div>
+      </div>
+
+      <div class="card mt-2">
+        <h3 class="card-title">🤖 Análisis IA</h3>
         <div style="padding:1rem;background:#f8fafc;border-radius:8px">
           <p><strong>Resumen:</strong> ${escapeHtml(data.resumen.resumen || '')}</p>
           ${data.resumen.ubicacion ? `<p><strong>Ubicación:</strong> ${escapeHtml(data.resumen.ubicacion)}</p>` : ''}
-          ${data.resumen.contacto ? `<p><strong>Contacto:</strong> ${escapeHtml(data.resumen.contacto)}</p>` : ''}
-          ${data.resumen.urgencia ? `<p><strong>Urgencia:</strong> ${escapeHtml(data.resumen.urgencia)}</p>` : ''}
-          ${data.resumen.categoria ? `<p><strong>Categoría:</strong> ${escapeHtml(data.resumen.categoria)}</p>` : ''}
+          ${data.contacto_detectado?.telefono ? `<p><strong>Teléfono detectado:</strong> ${escapeHtml(data.contacto_detectado.telefono)}</p>` : ''}
+          ${data.contacto_detectado?.nombre ? `<p><strong>Nombre detectado:</strong> ${escapeHtml(data.contacto_detectado.nombre)}</p>` : ''}
+          ${data.contacto_detectado?.ubicacion ? `<p><strong>Ubicación detectada:</strong> ${escapeHtml(data.contacto_detectado.ubicacion)}</p>` : ''}
+          ${data.categoria_detectada ? `<p><strong>Categoría detectada:</strong> <code>${escapeHtml(data.categoria_detectada)}</code></p>` : ''}
+          ${data.resumen.urgencia ? `<p><strong>Urgencia sugerida:</strong> ${escapeHtml(data.resumen.urgencia)}</p>` : ''}
         </div>
       </div>
     `;
@@ -539,5 +575,162 @@ async function loadLogs() {
     list.innerHTML = '<p class="text-muted">Logs detallados próximamente. Por ahora revisa el dashboard.</p>';
   } catch (e) {
     list.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+// ----------------------------------------------------------
+// Perfiles (seguimiento reiterativo)
+// ----------------------------------------------------------
+let perfilesCache = [];
+
+async function loadPerfilesAdmin() {
+  const list = document.getElementById('perfiles-list');
+  list.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div></div>';
+  try {
+    const data = await adminApi('/api/perfiles?limit=100');
+    perfilesCache = data.perfiles;
+    renderPerfilesAdmin(perfilesCache);
+  } catch (e) {
+    list.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function searchPerfiles() {
+  const q = document.getElementById('perfil-search').value.toLowerCase();
+  if (!q) { renderPerfilesAdmin(perfilesCache); return; }
+  const filtered = perfilesCache.filter(p =>
+    (p.nombre || '').toLowerCase().includes(q) ||
+    (p.telefono || '').includes(q) ||
+    (p.ubicacion || '').toLowerCase().includes(q)
+  );
+  renderPerfilesAdmin(filtered);
+}
+
+function renderPerfilesAdmin(perfiles) {
+  const list = document.getElementById('perfiles-list');
+  if (perfiles.length === 0) {
+    list.innerHTML = '<p class="text-muted">No hay perfiles todavía. Se crearán automáticamente cuando subas videos o crees reportes.</p>';
+    return;
+  }
+  list.innerHTML = `
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th><th>Tipo</th><th>Nombre</th><th>Teléfono</th>
+          <th>Ubicación</th><th>Reportes</th><th>Verificada</th>
+          <th>Última actividad</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${perfiles.map(p => `
+          <tr ${p.total_reportes > 1 ? 'style="background:#fffbeb"' : ''}>
+            <td>${p.id}</td>
+            <td>${p.tipo}</td>
+            <td><strong>${escapeHtml(p.nombre)}</strong></td>
+            <td>${escapeHtml(p.telefono || '')}</td>
+            <td>${escapeHtml(p.ubicacion || '')}</td>
+            <td>
+              <span class="urgencia-pill ${p.total_reportes > 1 ? 'urgencia-alta' : 'urgencia-media'}">${p.total_reportes}</span>
+            </td>
+            <td>${p.verificada ? '✅' : '—'}</td>
+            <td><small>${timeAgo(p.last_activity)}</small></td>
+            <td>
+              <a href="/perfil/${p.id}" target="_blank" class="btn btn-sm btn-outline">Ver →</a>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// ----------------------------------------------------------
+// Reportes de abuso
+// ----------------------------------------------------------
+async function loadAbusos() {
+  const list = document.getElementById('abuso-list');
+  list.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div></div>';
+  try {
+    const estado = document.getElementById('abuso-filter-estado').value;
+    const url = `/api/abuso${estado ? `?estado=${estado}` : ''}`;
+    const data = await adminApi(url);
+
+    if (data.reportes.length === 0) {
+      list.innerHTML = '<div class="alert alert-success">✅ No hay reportes de abuso. ¡Todo bien!</div>';
+      return;
+    }
+
+    const tipoLabel = {
+      'estafa': '💸 Estafa',
+      'suplantacion': '🎭 Suplantación',
+      'info_falsa': '❌ Info falsa',
+      'contenido_inapropiado': '🔞 Inapropiado',
+      'acoso': '😠 Acoso',
+      'otro': ' Otro',
+    };
+
+    list.innerHTML = data.reportes.map(r => `
+      <div class="card" ${r.estado === 'pendiente' ? 'style="border-left:4px solid #f59e0b"' : ''}>
+        <div class="card-meta">
+          <span class="card-meta-item"><strong>${tipoLabel[r.tipo] || r.tipo}</strong></span>
+          <span class="urgencia-pill urgencia-${r.estado === 'pendiente' ? 'alta' : 'media'}">${r.estado}</span>
+          ${r.anonimo ? '<span class="card-meta-item">🔒 Anónimo</span>' : '<span class="card-meta-item">👤 Identificado</span>'}
+          <span class="card-meta-item">🕒 ${timeAgo(r.created_at)}</span>
+        </div>
+        <p class="card-description">${escapeHtml(r.descripcion)}</p>
+        ${!r.anonimo ? `
+          <div class="card-contact">
+            ${r.reportante_nombre ? `<div>👤 ${escapeHtml(r.reportante_nombre)} ${escapeHtml(r.reportante_apellido || '')}</div>` : ''}
+            ${r.reportante_telefono ? `<div>📞 ${escapeHtml(r.reportante_telefono)}</div>` : ''}
+            ${r.reportante_email ? `<div>📧 ${escapeHtml(r.reportante_email)}</div>` : ''}
+          </div>
+        ` : ''}
+        ${r.entidad_tipo ? `<div class="text-sm text-muted mt-1">Sobre: ${escapeHtml(r.entidad_tipo)} #${r.entidad_id || ''} ${r.url_referencia ? `· <a href="${escapeHtml(r.url_referencia)}" target="_blank">URL</a>` : ''}</div>` : ''}
+        ${r.evidencia_urls ? `
+          <div class="mt-1">
+            <strong>Evidencias:</strong>
+            ${JSON.parse(r.evidencia_urls).map(u => `<img src="${u}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;margin:2px;border:1px solid #e2e8f0">`).join('')}
+          </div>
+        ` : ''}
+        <div class="card-actions mt-2">
+          ${r.estado === 'pendiente' ? `
+            <button onclick="reviewAbuso(${r.id},'revisado')" class="btn btn-sm btn-outline">✓ Revisado</button>
+            <button onclick="reviewAbuso(${r.id},'accionado')" class="btn btn-sm btn-success">⚡ Accionar</button>
+            <button onclick="reviewAbuso(${r.id},'descartado')" class="btn btn-sm btn-warning">🗑 Descartar</button>
+          ` : `
+            <button onclick="reviewAbuso(${r.id},'pendiente')" class="btn btn-sm btn-outline">↺ Reabrir</button>
+          `}
+          <button onclick="deleteAbuso(${r.id})" class="btn btn-sm btn-danger">🗑 Eliminar</button>
+        </div>
+        ${r.review_notes ? `<div class="text-sm text-muted mt-1">📝 Notas: ${escapeHtml(r.review_notes)}</div>` : ''}
+      </div>
+    `).join('');
+  } catch (e) {
+    list.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function reviewAbuso(id, estado) {
+  const notes = estado !== 'pendiente' ? prompt('Notas de revisión (opcional):') || '' : '';
+  try {
+    await adminApi(`/api/abuso/${id}`, {
+      method: 'PUT',
+      body: { estado, review_notes: notes },
+    });
+    showToast(`✅ Reporte marcado como: ${estado}`, 'success');
+    loadAbusos();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+}
+
+async function deleteAbuso(id) {
+  if (!confirm('¿Eliminar este reporte de abuso permanentemente?')) return;
+  try {
+    await adminApi(`/api/abuso/${id}`, { method: 'DELETE' });
+    showToast('✅ Reporte eliminado', 'success');
+    loadAbusos();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
   }
 }
