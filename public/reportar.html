@@ -16,16 +16,18 @@
       <nav class="nav" id="nav">
         <a href="/" class="nav-link">Inicio</a>
         <a href="/mapa.html" class="nav-link">Mapa</a>
+        <a href="/noticias.html" class="nav-link">Noticias</a>
         <a href="/buscar.html" class="nav-link">Buscar</a>
         <a href="/reportar.html" class="nav-link active">Reportar</a>
         <a href="/admin/" class="nav-link">Admin</a>
+        <div class="lang-switcher"><button class="lang-btn active" data-lang="es" onclick="setLang('es')">ES</button><button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button></div>
       </nav>
       <button class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('mobile-open')">☰</button>
     </div>
   </header>
 
   <div class="container-narrow">
-    <h1 class="section-title">🆘 Publicar Necesidad de Ayuda</h1>
+    <h1 class="section-title" data-i18n="reportar.title">🆘 Publicar Necesidad de Ayuda</h1>
     <p class="section-subtitle">Completa el formulario. Tu solicitud aparecerá en el mapa y en la lista de necesidades. Donantes te contactarán directamente.</p>
 
     <!-- Toggle: reporte vs evento en mapa -->
@@ -200,6 +202,7 @@
     <div id="resultado" class="mt-3"></div>
   </div>
 
+  <script src="/js/i18n.js"></script>
   <script src="/js/main.js"></script>
   <script>
     // Cargar sectores en el select

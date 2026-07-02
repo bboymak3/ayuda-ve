@@ -89,12 +89,17 @@
         <span>Ayuda VE</span>
       </a>
       <nav class="nav" id="nav">
-        <a href="/" class="nav-link active">Inicio</a>
-        <a href="/mapa.html" class="nav-link">Mapa</a>
-        <a href="/buscar.html" class="nav-link">Buscar</a>
-        <a href="/reportar.html" class="nav-link">Reportar</a>
-        <a href="/reportar-abuso.html" class="nav-link" style="color:#dc2626">🚩 Abuso</a>
-        <a href="/admin/" class="nav-link">Admin</a>
+        <a href="/" class="nav-link active" data-i18n="nav.inicio">Inicio</a>
+        <a href="/mapa.html" class="nav-link" data-i18n="nav.mapa">Mapa</a>
+        <a href="/noticias.html" class="nav-link" data-i18n="nav.noticias">Noticias</a>
+        <a href="/buscar.html" class="nav-link" data-i18n="nav.buscar">Buscar</a>
+        <a href="/reportar.html" class="nav-link" data-i18n="nav.reportar">Reportar</a>
+        <a href="/reportar-abuso.html" class="nav-link" style="color:#dc2626" data-i18n="nav.abuso">🚩 Abuso</a>
+        <a href="/admin/" class="nav-link" data-i18n="nav.admin">Admin</a>
+        <div class="lang-switcher">
+          <button class="lang-btn active" data-lang="es" onclick="setLang('es')">ES</button>
+          <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+        </div>
       </nav>
       <button class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('mobile-open')">☰</button>
     </div>
@@ -102,9 +107,10 @@
 
   <!-- HERO -->
   <section class="hero">
-    <h1>🤝 Donaciones Directas, Sin Intermediarios</h1>
-    <p>Conectamos a quienes tienen algo para donar con quienes lo necesitan, en Venezuela. Medicinas, alimentos, materiales, transporte, maquinaria y más.</p>
-    <div class="hero-emergency" id="emergency-banner">
+    <h1 data-i18n="home.h1">Ayuda en Venezuela</h1>
+    <h2 data-i18n="home.h2" style="font-size:1.1rem;font-weight:500;margin-top:8px;opacity:0.95">Ayuda para venezolanos tras el terremoto</h2>
+    <p data-i18n="home.hero.p">Conectamos a quienes necesitan ayuda con quienes quieren ayudar. Donaciones, medicinas, alimentos, transporte, maquinaria y más — directamente, sin intermediarios.</p>
+    <div class="hero-emergency" id="emergency-banner" data-i18n="home.hero.emergency">
       🚨 Emergencia: llama al <strong>911</strong> o a Protección Civil
     </div>
   </section>
@@ -113,18 +119,18 @@
   <div class="main-buttons">
     <a href="/quiero-ayudar.html" class="btn-main btn-main-help">
       <span class="btn-main-icon">💙</span>
-      <span>QUIERO AYUDAR</span>
-      <span class="text-sm" style="opacity:0.9;margin-top:4px">Tengo algo para donar</span>
+      <span data-i18n="home.btn.ayudar">QUIERO AYUDAR</span>
+      <span class="text-sm" style="opacity:0.9;margin-top:4px" data-i18n="home.btn.ayudar.sub">Tengo algo para donar</span>
     </a>
     <a href="/reportar.html" class="btn-main btn-main-need">
       <span class="btn-main-icon">🆘</span>
-      <span>NECESITO AYUDA</span>
-      <span class="text-sm" style="opacity:0.9;margin-top:4px">Publico mi necesidad</span>
+      <span data-i18n="home.btn.necesito">NECESITO AYUDA</span>
+      <span class="text-sm" style="opacity:0.9;margin-top:4px" data-i18n="home.btn.necesito.sub">Publico mi necesidad</span>
     </a>
     <a href="/noticias.html" class="btn-main btn-main-search" style="background:#f59e0b">
       <span class="btn-main-icon">📰</span>
-      <span>ÚLTIMAS NOTICIAS</span>
-      <span class="text-sm" style="opacity:0.9;margin-top:4px">Todas las publicaciones recientes</span>
+      <span data-i18n="home.btn.noticias">ÚLTIMAS NOTICIAS</span>
+      <span class="text-sm" style="opacity:0.9;margin-top:4px" data-i18n="home.btn.noticias.sub">Todas las publicaciones recientes</span>
     </a>
   </div>
 
@@ -132,8 +138,8 @@
   <div class="container">
     <a href="/mapa.html" class="btn btn-success btn-lg btn-block" style="padding:1.5rem;font-size:1.2rem;display:flex;flex-direction:column;align-items:center;gap:0.5rem">
       <span style="font-size:2.5rem">📍</span>
-      <strong>PUBLICAR EN MAPA</strong>
-      <small style="opacity:0.9">Clic en el mapa, completa el formulario y tu evento aparece al instante</small>
+      <strong data-i18n="home.btn.publicar_mapa">PUBLICAR EN MAPA</strong>
+      <small style="opacity:0.9" data-i18n="home.btn.publicar_mapa.sub">Clic en el mapa, completa el formulario y tu evento aparece al instante</small>
     </a>
   </div>
 
@@ -141,25 +147,25 @@
   <div class="container">
     <a href="/buscar.html" class="btn btn-outline btn-block" style="padding:0.75rem;font-size:0.95rem;display:flex;align-items:center;justify-content:center;gap:0.5rem">
       <span style="font-size:1.25rem">🔍</span>
-      <strong>BUSCAR DONACIONES</strong>
-      <small style="opacity:0.7">· por categoría, ubicación o palabra</small>
+      <strong data-i18n="home.btn.buscar">BUSCAR DONACIONES</strong>
+      <small style="opacity:0.7" data-i18n="home.btn.buscar.sub">· por categoría, ubicación o palabra</small>
     </a>
   </div>
 
   <!-- Banner: cualquiera puede publicar -->
   <div class="container" style="background:#dbeafe;border-radius:12px;padding:1rem;margin:1rem auto;border:1px solid #93c5fd;text-align:center">
-    <strong>📢 ¡Cualquier persona puede publicar en esta plataforma!</strong><br>
-    <small>No necesitas registro. Solo completa el formulario y tu publicación aparece en el mapa y en la lista.</small>
+    <strong data-i18n="home.banner">📢 ¡Cualquier persona puede publicar en esta plataforma!</strong><br>
+    <small data-i18n="home.banner.sub">No necesitas registro. Solo completa el formulario y tu publicación aparece en el mapa y en la lista.</small>
     <div class="flex gap-1 mt-1" style="justify-content:center;flex-wrap:wrap">
-      <a href="/reportar.html" class="btn btn-primary btn-sm">📝 Publicar solicitud</a>
-      <a href="/mapa.html" class="btn btn-success btn-sm">📍 Poner evento en mapa</a>
+      <a href="/reportar.html" class="btn btn-primary btn-sm">📝 <span data-i18n="nav.reportar">Reportar</span></a>
+      <a href="/mapa.html" class="btn btn-success btn-sm">📍 <span data-i18n="nav.mapa">Mapa</span></a>
     </div>
   </div>
 
   <!-- CATEGORIAS DESTACADAS -->
   <div class="container">
-    <h2 class="section-title">Categorías de donación</h2>
-    <p class="section-subtitle">Explora las necesidades y disponibles por sector. Toca una categoría para ver qué hay disponible.</p>
+    <h2 class="section-title" data-i18n="home.categorias">Categorías de donación</h2>
+    <p class="section-subtitle" data-i18n="home.categorias.sub">Explora las necesidades y ofertas por sector. Toca una categoría para ver qué hay disponible.</p>
     <div class="categorias-grid" id="categorias-grid">
       <div class="loading-state">Cargando categorías...</div>
     </div>
@@ -167,11 +173,11 @@
 
   <!-- INFO -->
   <div class="container">
-    <h2 class="section-title">¿Cómo funciona?</h2>
+    <h2 class="section-title" data-i18n="home.como_funciona">¿Cómo funciona?</h2>
     <div class="grid-2">
       <div class="card">
-        <h3 class="card-title">💙 Si quieres donar</h3>
-        <p class="card-description">
+        <h3 class="card-title" data-i18n="home.como.ayudar.t">💙 Si quieres donar</h3>
+        <p class="card-description" data-i18n="home.como.ayudar.d">
           1. Entra a "Quiero Ayudar" y escoge la categoría que quieres donar (comida, medicinas, transporte, etc.).<br>
           2. Publica tu disponible con tu nombre y teléfono.<br>
           3. Personas que necesitan esa ayuda te contactan directamente.<br>
@@ -179,8 +185,8 @@
         </p>
       </div>
       <div class="card">
-        <h3 class="card-title">🆘 Si necesitas ayuda</h3>
-        <p class="card-description">
+        <h3 class="card-title" data-i18n="home.como.necesito.t">🆘 Si necesitas ayuda</h3>
+        <p class="card-description" data-i18n="home.como.necesito.d">
           1. Entra a "Necesito Ayuda" y completa el formulario.<br>
           2. Publica tu solicitud con tu contacto.<br>
           3. Apareces en el mapa y donantes te ven.<br>
@@ -188,15 +194,15 @@
         </p>
       </div>
       <div class="card">
-        <h3 class="card-title">🗺️ Mapa interactivo</h3>
-        <p class="card-description">
-          Clic en cualquier punto del mapa para poner un evento con tu necesidad u disponible. Los eventos cambian de color según urgencia: 🔴 crítico, 🟡 alta, 🔵 información/disponible, 🟢 resuelto. Cualquiera puede poner eventos, sin restricción.
+        <h3 class="card-title" data-i18n="home.como.mapa.t">🗺️ Mapa interactivo</h3>
+        <p class="card-description" data-i18n="home.como.mapa.d">
+          Clic en cualquier punto del mapa para poner un evento con tu necesidad u oferta. Los eventos cambian de color según urgencia: 🔴 crítico, 🟡 alta, 🔵 información, 🟢 resuelto.
         </p>
       </div>
       <div class="card">
-        <h3 class="card-title">🔍 Búsqueda inteligente</h3>
-        <p class="card-description">
-          Busca por palabra clave. El sistema conecta automáticamente donaciones con necesidades similares (ej: "antibióticos" encuentra farmacias y donantes de medicinas; "médico" encuentra hospitales activos).
+        <h3 class="card-title" data-i18n="home.como.buscar.t">🔍 Búsqueda inteligente</h3>
+        <p class="card-description" data-i18n="home.como.buscar.d">
+          Busca por palabra clave. El sistema conecta automáticamente donaciones con necesidades similares.
         </p>
       </div>
     </div>
@@ -204,22 +210,22 @@
 
   <!-- Enlace a venezuelatebusca -->
   <div class="container" style="background:#fef3c7;border-radius:12px;padding:1.5rem;margin:2rem auto;border:1px solid #fcd34d">
-    <h2 style="font-size:1.2rem;margin-bottom:0.5rem">👥 ¿Buscas a una persona?</h2>
-    <p style="margin-bottom:1rem;color:#92400e">
-      Para reportar o buscar personas (familiares, amigos desaparecidos), te recomendamos usar <strong>Venezuela Te Busca</strong>, una plataforma especializada en reencuentro de personas.
+    <h2 style="font-size:1.2rem;margin-bottom:0.5rem" data-i18n="home.personas">👥 ¿Buscas a una persona?</h2>
+    <p style="margin-bottom:1rem;color:#92400e" data-i18n="home.personas.d">
+      Para reportar o buscar personas, te recomendamos usar Venezuela Te Busca.
     </p>
-    <a href="https://venezuelatebusca.com/" target="_blank" rel="noopener" class="btn btn-warning">
+    <a href="https://venezuelatebusca.com/" target="_blank" rel="noopener" class="btn btn-warning" data-i18n="home.personas.btn">
       Ir a Venezuela Te Busca →
     </a>
   </div>
 
   <!-- Reportar abuso -->
   <div class="container" style="background:#fee2e2;border-radius:12px;padding:1.5rem;margin:1rem auto;border:1px solid #fca5a5">
-    <h2 style="font-size:1.2rem;margin-bottom:0.5rem;color:#991b1b">🚩 ¿Detectaste abuso o estafa?</h2>
-    <p style="margin-bottom:1rem;color:#991b1b">
-      Si ves información falsa, alguien pidiendo donaciones falsas, suplantación de identidad o contenido inapropiado en la plataforma, repórtalo. Puedes hacerlo <strong>anónimamente</strong> o con tu nombre.
+    <h2 style="font-size:1.2rem;margin-bottom:0.5rem;color:#991b1b" data-i18n="home.abuso.t">🚩 ¿Detectaste abuso o estafa?</h2>
+    <p style="margin-bottom:1rem;color:#991b1b" data-i18n="home.abuso.d">
+      Si ves información falsa, alguien pidiendo donaciones falsas, suplantación de identidad o contenido inapropiado, repórtalo.
     </p>
-    <a href="/reportar-abuso.html" class="btn btn-danger">
+    <a href="/reportar-abuso.html" class="btn btn-danger" data-i18n="home.abuso.btn">
       🚩 Reportar abuso
     </a>
   </div>
@@ -241,6 +247,7 @@
     </div>
   </footer>
 
+  <script src="/js/i18n.js"></script>
   <script src="/js/main.js"></script>
   <script>
     async function loadCategorias() {
