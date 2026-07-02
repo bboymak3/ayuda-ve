@@ -9,7 +9,7 @@ export async function onRequestGet({ env, params }) {
   }
 
   const evento = await env.DB.prepare(
-    `SELECT * FROM eventos WHERE id = ?`
+    `SELECT * FROM chulitos WHERE id = ?`
   ).bind(id).first();
 
   if (!evento) {
