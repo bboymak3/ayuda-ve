@@ -365,7 +365,7 @@
     // Cuando el usuario pega el código iframe de Facebook
     // Auto-extrae URL, genera título, descripción, tipo y categoría
     // ============================================================
-    function onEmbedChange() {
+    async function onEmbedChange() {
       const code = document.getElementById('embed_html').value.trim();
       const status = document.getElementById('embed-status');
       const preview = document.getElementById('embed-preview');
@@ -388,7 +388,6 @@
       }
 
       // Extraer URL del atributo src del iframe
-      // Ej: src="https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F27348309998195533%2F..."
       const srcMatch = code.match(/src=["']([^"']+)["']/i);
       if (!srcMatch) {
         status.innerHTML = '<div class="alert alert-error" style="padding:6px;font-size:0.85rem">❌ No se encontró el atributo src en el iframe</div>';
@@ -396,85 +395,112 @@
       }
 
       const srcUrl = srcMatch[1];
-      // Buscar el parámetro href= que contiene la URL real del post (URL-encoded)
       const hrefMatch = srcUrl.match(/[?&]href=([^&]+)/);
       let urlOriginal = null;
       if (hrefMatch) {
         urlOriginal = decodeURIComponent(hrefMatch[1]);
       } else {
-        // Si no hay href, usar srcUrl como URL original
         urlOriginal = srcUrl;
       }
 
       // Llenar URL de origen
       document.getElementById('url_origen').value = urlOriginal;
 
-      // Generar título según el tipo de contenido
+      // Título inicial (placeholder mientras cargamos el real)
       let tituloGen = 'Post de Facebook';
       let tipoLabel = 'post';
-
-      // Reel: /reel/ID
       let m = urlOriginal.match(/facebook\.com\/reel\/([^\/\?]+)/i);
-      if (m) {
-        tituloGen = `Video Reel de Facebook (${m[1].slice(0, 12)}...)`;
-        tipoLabel = 'reel';
-      } else {
-        // Video: /USUARIO/videos/ID o /watch?v=
+      if (m) { tituloGen = `Video Reel (${m[1].slice(0, 8)}...)`; tipoLabel = 'reel'; }
+      else {
         m = urlOriginal.match(/facebook\.com\/([^\/]+)\/videos\/([^\/\?]+)/i);
-        if (m) {
-          const usuario = m[1].replace(/[._-]/g, ' ');
-          tituloGen = `Video de ${usuario} (Facebook)`;
-          tipoLabel = 'video';
-        } else {
-          // Post: /USUARIO/posts/ID
+        if (m) { tituloGen = `Video de ${m[1].replace(/[._-]/g,' ')} (FB)`; tipoLabel = 'video'; }
+        else {
           m = urlOriginal.match(/facebook\.com\/([^\/]+)\/posts\/([^\/\?]+)/i);
-          if (m) {
-            const usuario = m[1].replace(/[._-]/g, ' ');
-            tituloGen = `Post de ${usuario} (Facebook)`;
-            tipoLabel = 'post';
-          } else {
-            // Share: /share/p/ID
+          if (m) { tituloGen = `Post de ${m[1].replace(/[._-]/g,' ')} (FB)`; tipoLabel = 'post'; }
+          else {
             m = urlOriginal.match(/facebook\.com\/share\/(?:p|v|post)\/([^\/\?]+)/i);
-            if (m) {
-              tituloGen = `Post de Facebook (${m[1]})`;
-              tipoLabel = 'post';
-            }
+            if (m) { tituloGen = `Post FB (${m[1]})`; tipoLabel = 'post'; }
           }
         }
       }
 
-      // Llenar título si el usuario no lo ha editado
+      // Llenar título placeholder
       if (!document.getElementById('titulo').dataset.userEdited) {
         document.getElementById('titulo').value = tituloGen;
       }
-
-      // Llenar descripción si el usuario no la ha editado
       if (!document.getElementById('descripcion').dataset.userEdited) {
-        const descAuto = `Ver publicación original de Facebook (mostrada abajo como embed). Tipo: ${tipoLabel}.`;
-        document.getElementById('descripcion').value = descAuto;
+        document.getElementById('descripcion').value = `Ver publicación original de Facebook (mostrada abajo como embed). Tipo: ${tipoLabel}.`;
       }
-
-      // Auto-seleccionar tipo "información" y categoría "Información Útil"
       document.getElementById('tipo').value = 'informacion';
-      // Buscar la opción "Información Útil" en el select de sectores (suele ser id=8)
       const sectorSelect = document.getElementById('sector_id');
       for (const opt of sectorSelect.options) {
-        if (opt.text.includes('Información')) {
-          sectorSelect.value = opt.value;
-          break;
-        }
+        if (opt.text.includes('Información')) { sectorSelect.value = opt.value; break; }
       }
 
-      // Mostrar estado y vista previa
+      // Mostrar estado inicial
       status.innerHTML = `
-        <div class="alert alert-success" style="padding:8px;font-size:0.85rem">
-          ✅ <strong>Embed detectado correctamente</strong><br>
-          📋 Tipo: ${tipoLabel}<br>
-          🔗 URL original: <a href="${urlOriginal}" target="_blank" style="word-break:break-all">${urlOriginal}</a><br>
-          📝 Título auto-generado: <em>${tituloGen}</em>
+        <div class="alert alert-info" style="padding:8px;font-size:0.85rem">
+          ⏳ <strong>Embed detectado.</strong> Obteniendo título real de Facebook...
         </div>
       `;
       preview.innerHTML = `<div class="text-sm text-muted mb-1">Vista previa del embed:</div><div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;max-width:100%;display:flex;justify-content:center">${code}</div>`;
+
+      // ============================================================
+      // HACER FETCH AL ENDPOINT QUE LEE FACEBOOK DESDE EL SERVIDOR
+      // ============================================================
+      try {
+        const metaRes = await fetch(`/api/fb-metadata?url=${encodeURIComponent(urlOriginal)}`);
+        const metaData = await metaRes.json();
+
+        if (metaData.ok && metaData.metadata && metaData.metadata.titulo) {
+          // ¡Tenemos el título real!
+          const tituloReal = metaData.metadata.titulo;
+          const descReal = metaData.metadata.descripcion || '';
+          const imgReal = metaData.metadata.imagen || '';
+
+          // Actualizar título si el usuario no lo ha editado
+          if (!document.getElementById('titulo').dataset.userEdited) {
+            document.getElementById('titulo').value = tituloReal;
+          }
+
+          // Actualizar descripción con la real de Facebook
+          if (!document.getElementById('descripcion').dataset.userEdited && descReal) {
+            document.getElementById('descripcion').value = descReal;
+          }
+
+          // Mostrar estado de éxito con datos reales
+          status.innerHTML = `
+            <div class="alert alert-success" style="padding:8px;font-size:0.85rem">
+              ✅ <strong>¡Título real obtenido de Facebook!</strong><br>
+              📋 Tipo: ${tipoLabel}<br>
+              🔗 URL: <a href="${urlOriginal}" target="_blank" style="word-break:break-all">${urlOriginal.slice(0, 60)}${urlOriginal.length > 60 ? '...' : ''}</a><br>
+              📝 <strong>Título:</strong> ${escapeHtml(tituloReal)}<br>
+              ${descReal ? `📄 <strong>Descripción:</strong> ${escapeHtml(descReal.slice(0, 100))}${descReal.length > 100 ? '...' : ''}<br>` : ''}
+              ${imgReal ? `🖼️ <strong>Imagen:</strong> detectada<br>` : ''}
+            </div>
+          `;
+        } else {
+          // No se pudo obtener metadata, usar título placeholder
+          status.innerHTML = `
+            <div class="alert alert-warning" style="padding:8px;font-size:0.85rem">
+              ⚠️ <strong>Embed detectado</strong> (no se pudo obtener título real de Facebook)<br>
+              📋 Tipo: ${tipoLabel}<br>
+              🔗 URL: <a href="${urlOriginal}" target="_blank" style="word-break:break-all">${urlOriginal.slice(0, 60)}${urlOriginal.length > 60 ? '...' : ''}</a><br>
+              📝 Título: <em>${tituloGen}</em>
+            </div>
+          `;
+        }
+      } catch (e) {
+        // Error de red, mantener título placeholder
+        status.innerHTML = `
+          <div class="alert alert-warning" style="padding:8px;font-size:0.85rem">
+            ⚠️ <strong>Embed detectado</strong> (error leyendo Facebook: ${e.message})<br>
+            📋 Tipo: ${tipoLabel}<br>
+            🔗 URL: <a href="${urlOriginal}" target="_blank">${urlOriginal.slice(0, 60)}</a><br>
+            📝 Título: <em>${tituloGen}</em>
+          </div>
+        `;
+      }
     }
 
     // Marcar cuando el usuario edita manualmente el título o descripción
@@ -489,7 +515,7 @@
     // MODO MÚLTIPLE: detectar varios iframes en un texto grande
     // ============================================================
 
-    function onMultipleChange() {
+    async function onMultipleChange() {
       const texto = document.getElementById('multiple_embed').value;
       const countEl = document.getElementById('multiple-count');
       const listEl = document.getElementById('multiple-list');
@@ -499,7 +525,6 @@
       const matches = texto.match(regex) || [];
 
       iframesDetectados = matches.map((iframe, idx) => {
-        // Extraer URL del src
         const srcMatch = iframe.match(/src=["']([^"']+)["']/i);
         let urlOriginal = '';
         if (srcMatch) {
@@ -507,58 +532,81 @@
           if (hrefMatch) {
             try { urlOriginal = decodeURIComponent(hrefMatch[1]); }
             catch { urlOriginal = srcMatch[1]; }
-          } else {
-            urlOriginal = srcMatch[1];
-          }
+          } else { urlOriginal = srcMatch[1]; }
         }
-
-        // Generar título
         let titulo = 'Post de Facebook';
         let tipoLabel = 'post';
         let m = urlOriginal.match(/facebook\.com\/reel\/([^\/\?]+)/i);
-        if (m) {
-          titulo = `Video Reel de Facebook (${m[1].slice(0, 12)}...)`;
-          tipoLabel = 'reel';
-        } else {
+        if (m) { titulo = `Video Reel (${m[1].slice(0, 8)}...)`; tipoLabel = 'reel'; }
+        else {
           m = urlOriginal.match(/facebook\.com\/([^\/]+)\/videos\/([^\/\?]+)/i);
-          if (m) {
-            titulo = `Video de ${m[1].replace(/[._-]/g, ' ')} (Facebook)`;
-            tipoLabel = 'video';
-          } else {
+          if (m) { titulo = `Video de ${m[1].replace(/[._-]/g,' ')} (FB)`; tipoLabel = 'video'; }
+          else {
             m = urlOriginal.match(/facebook\.com\/([^\/]+)\/posts\/([^\/\?]+)/i);
-            if (m) {
-              titulo = `Post de ${m[1].replace(/[._-]/g, ' ')} (Facebook)`;
-              tipoLabel = 'post';
-            } else {
+            if (m) { titulo = `Post de ${m[1].replace(/[._-]/g,' ')} (FB)`; tipoLabel = 'post'; }
+            else {
               m = urlOriginal.match(/facebook\.com\/share\/(?:p|v|post)\/([^\/\?]+)/i);
-              if (m) {
-                titulo = `Post de Facebook (${m[1]})`;
-              }
+              if (m) { titulo = `Post FB (${m[1]})`; }
             }
           }
         }
-
-        return { idx: idx + 1, iframe, urlOriginal, titulo, tipoLabel, estado: 'pendiente' };
+        return { idx: idx + 1, iframe, urlOriginal, titulo, tituloReal: null, tipoLabel, estado: 'pendiente' };
       });
 
-      // Mostrar conteo
       if (iframesDetectados.length === 0) {
         countEl.innerHTML = '<div class="text-muted">No se detectaron iframes todavía. Pega los códigos arriba.</div>';
         listEl.innerHTML = '';
-      } else {
-        countEl.innerHTML = `<div class="alert alert-success" style="padding:8px"><strong>✅ ${iframesDetectados.length} iframe(s) detectado(s)</strong> — cada uno generará una ficha independiente</div>`;
-        listEl.innerHTML = iframesDetectados.map(ifd => `
-          <div class="card" style="padding:8px;margin-bottom:6px" id="iframe-card-${ifd.idx}">
-            <div class="flex" style="justify-content:space-between;align-items:center">
-              <div style="flex:1;min-width:0">
-                <div class="text-sm font-bold">#${ifd.idx} — ${escapeHtml(ifd.titulo)}</div>
-                <div class="text-sm text-muted" style="word-break:break-all">🔗 ${escapeHtml(ifd.urlOriginal.slice(0, 80))}${ifd.urlOriginal.length > 80 ? '...' : ''}</div>
-                <div class="text-sm" style="color:#6366f1">📋 Tipo: ${ifd.tipoLabel} · Estado: <span id="estado-${ifd.idx}">⏳ pendiente</span></div>
-              </div>
+        return;
+      }
+
+      countEl.innerHTML = `<div class="alert alert-success" style="padding:8px"><strong>✅ ${iframesDetectados.length} iframe(s) detectado(s)</strong> — obteniendo títulos reales de Facebook...</div>`;
+      listEl.innerHTML = iframesDetectados.map(ifd => `
+        <div class="card" style="padding:8px;margin-bottom:6px" id="iframe-card-${ifd.idx}">
+          <div class="flex" style="justify-content:space-between;align-items:center">
+            <div style="flex:1;min-width:0">
+              <div class="text-sm font-bold" id="titulo-${ifd.idx}">#${ifd.idx} — ${escapeHtml(ifd.titulo)}</div>
+              <div class="text-sm text-muted" style="word-break:break-all">🔗 ${escapeHtml(ifd.urlOriginal.slice(0, 80))}${ifd.urlOriginal.length > 80 ? '...' : ''}</div>
+              <div class="text-sm" style="color:#6366f1">📋 Tipo: ${ifd.tipoLabel} · Estado: <span id="estado-${ifd.idx}">⏳ pendiente</span></div>
             </div>
           </div>
-        `).join('');
+        </div>
+      `).join('');
+
+      // ============================================================
+      // OBTENER TÍTULOS REALES DE FACEBOOK EN PARALELO
+      // (máximo 5 a la vez para no saturar)
+      // ============================================================
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < iframesDetectados.length; i += BATCH_SIZE) {
+        const batch = iframesDetectados.slice(i, i + BATCH_SIZE);
+        await Promise.all(batch.map(async (ifd) => {
+          if (!ifd.urlOriginal) return;
+          try {
+            const metaRes = await fetch(`/api/fb-metadata?url=${encodeURIComponent(ifd.urlOriginal)}`);
+            const metaData = await metaRes.json();
+            if (metaData.ok && metaData.metadata && metaData.metadata.titulo) {
+              ifd.tituloReal = metaData.metadata.titulo;
+              ifd.titulo = metaData.metadata.titulo; // actualizar para usar al crear ficha
+              if (metaData.metadata.descripcion) {
+                ifd.descripcionReal = metaData.metadata.descripcion;
+              }
+              // Actualizar el DOM
+              const tituloEl = document.getElementById(`titulo-${ifd.idx}`);
+              if (tituloEl) {
+                tituloEl.innerHTML = `#${ifd.idx} — ✅ ${escapeHtml(ifd.tituloReal)}`;
+                tituloEl.style.color = '#10b981';
+              }
+            } else {
+              const tituloEl = document.getElementById(`titulo-${ifd.idx}`);
+              if (tituloEl) tituloEl.innerHTML = `#${ifd.idx} — ⚠️ ${escapeHtml(ifd.titulo)}`;
+            }
+          } catch (e) {
+            console.log(`Error obteniendo metadata para iframe ${ifd.idx}:`, e);
+          }
+        }));
       }
+
+      countEl.innerHTML = `<div class="alert alert-success" style="padding:8px"><strong>✅ ${iframesDetectados.length} iframe(s) detectado(s)</strong> — listos para crear fichas</div>`;
     }
 
     // Crear todas las fichas (una por iframe)
@@ -590,6 +638,8 @@
         const body = {
           tipo_contenido: 'facebook_embed',
           embed_html: ifd.iframe,
+          titulo: ifd.tituloReal || ifd.titulo,
+          descripcion: ifd.descripcionReal || `Ver publicación original de Facebook (mostrada abajo como embed). Tipo: ${ifd.tipoLabel}.`,
           tipo: 'informacion',
           sector_id: 8,
           urgencia: 'media',
