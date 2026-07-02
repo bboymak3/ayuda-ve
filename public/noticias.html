@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Últimas Noticias — Ayuda VE</title>
+  <meta name="description" content="Todas las publicaciones recientes: necesidades, ofertas e información útil. Actualizado en tiempo real.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo"><span class="logo-icon">🤝</span><span>Ayuda VE</span></a>
+      <nav class="nav" id="nav">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/mapa.html" class="nav-link">Mapa</a>
+        <a href="/buscar.html" class="nav-link">Buscar</a>
+        <a href="/reportar.html" class="nav-link">Reportar</a>
+        <a href="/reportar-abuso.html" class="nav-link" style="color:#dc2626">🚩 Abuso</a>
+        <a href="/admin/" class="nav-link">Admin</a>
+      </nav>
+      <button class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('mobile-open')">☰</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <h1 class="section-title">📰 Últimas Noticias</h1>
+    <p class="section-subtitle">Todas las publicaciones recientes: necesidades, ofertas e información útil. Actualizado en tiempo real.</p>
+
+    <div class="flex gap-1 mb-2" style="flex-wrap:wrap">
+      <button class="btn btn-sm btn-outline" data-tipo="" onclick="filtrar('')">📋 Todas</button>
+      <button class="btn btn-sm btn-outline" data-tipo="solicitud" onclick="filtrar('solicitud')">🆘 Necesitan</button>
+      <button class="btn btn-sm btn-outline" data-tipo="oferta" onclick="filtrar('oferta')">💚 Ofrecen</button>
+      <button class="btn btn-sm btn-outline" data-tipo="informacion" onclick="filtrar('informacion')">ℹ️ Info</button>
+      <button class="btn btn-sm btn-primary" onclick="loadNoticias()">🔄 Actualizar</button>
+    </div>
+
+    <div id="noticias-list" class="loading-state">Cargando...</div>
+
+    <div class="text-center mt-3">
+      <button id="load-more" class="btn btn-outline" onclick="loadMore()" style="display:none">Cargar más →</button>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    let currentOffset = 0;
+    let currentTipo = '';
+    const PAGE_SIZE = 20;
+
+    async function loadNoticias(append = false) {
+      const list = document.getElementById('noticias-list');
+      if (!append) {
+        list.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div> Cargando...</div>';
+        currentOffset = 0;
+      }
+
+      try {
+        let url = `/api/noticias?limit=${PAGE_SIZE}&offset=${currentOffset}`;
+        if (currentTipo) url += `&tipo=${currentTipo}`;
+
+        const data = await api(url);
+
+        if (!append) {
+          if (data.publicaciones.length === 0) {
+            list.innerHTML = `
+              <div class="card text-center">
+                <h3>Aún no hay publicaciones</h3>
+                <p class="text-muted mb-2">Sé el primero en publicar.</p>
+                <a href="/reportar.html" class="btn btn-primary">➕ Publicar</a>
+              </div>
+            `;
+            document.getElementById('load-more').style.display = 'none';
+            return;
+          }
+          list.innerHTML = data.publicaciones.map(renderNoticia).join('');
+        } else {
+          list.innerHTML += data.publicaciones.map(renderNoticia).join('');
+        }
+
+        // Mostrar botón "cargar más" si hay más resultados
+        document.getElementById('load-more').style.display =
+          data.publicaciones.length === PAGE_SIZE ? '' : 'none';
+
+      } catch (e) {
+        list.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function renderNoticia(p) {
+      const tipoLabel = {
+        'solicitud': '🆘 NECESITA AYUDA',
+        'oferta': '💚 OFRECE AYUDA',
+        'informacion': 'ℹ️ INFORMACIÓN',
+      }[p.tipo] || p.tipo;
+
+      const fuenteLabel = p.fuente === 'evento' ? '📍 Evento del mapa' : '📝 Reporte';
+      const ubicacion = p.ubicacion_texto ||
+        [p.ubicacion_ciudad, p.ubicacion_estado].filter(Boolean).join(', ') || '';
+
+      const fotos = p.foto_urls && Array.isArray(p.foto_urls) ? p.foto_urls : null;
+      const sectorInfo = p.sector_icono && p.sector_nombre
+        ? `${p.sector_icono} ${escapeHtml(p.sector_nombre)}`
+        : (p.categoria ? `🏷️ ${escapeHtml(p.categoria)}` : '');
+
+      return `
+        <div class="card">
+          <div class="card-meta">
+            <span class="card-meta-item"><strong>${tipoLabel}</strong></span>
+            <span class="urgencia-pill urgencia-${p.urgencia}">${p.urgencia.toUpperCase()}</span>
+            ${sectorInfo ? `<span class="card-meta-item">${sectorInfo}</span>` : ''}
+            <span class="card-meta-item">${fuenteLabel}</span>
+            <span class="card-meta-item">🕒 ${timeAgo(p.created_at)}</span>
+          </div>
+          <h3 class="card-title">${escapeHtml(p.titulo || (p.descripcion || '').slice(0, 80) || 'Sin título')}</h3>
+          <p class="card-description">${escapeHtml((p.descripcion || '').slice(0, 300))}${(p.descripcion || '').length > 300 ? '...' : ''}</p>
+          ${fotos && fotos.length > 0 ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">${fotos.slice(0,3).map(u => `<img src="${escapeHtml(u)}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid #e2e8f0">`).join('')}</div>` : ''}
+          <div class="card-contact">
+            ${p.contacto_nombre ? `<div>👤 ${escapeHtml(p.contacto_nombre)}</div>` : ''}
+            ${p.contacto_telefono ? `<div>📞 <a href="tel:${escapeHtml(p.contacto_telefono)}">${escapeHtml(p.contacto_telefono)}</a> · <a href="${whatsappLink(p.contacto_telefono)}" target="_blank">WhatsApp</a></div>` : ''}
+            ${ubicacion ? `<div style="color:#64748b">📍 ${escapeHtml(ubicacion)}</div>` : ''}
+          </div>
+          <div class="card-actions">
+            <a href="${p.url}" class="btn btn-sm btn-primary">Ver ficha completa →</a>
+          </div>
+        </div>
+      `;
+    }
+
+    function filtrar(tipo) {
+      currentTipo = tipo;
+      document.querySelectorAll('[data-tipo]').forEach(b => {
+        b.classList.toggle('btn-primary', b.dataset.tipo === tipo);
+        b.classList.toggle('btn-outline', b.dataset.tipo !== tipo);
+      });
+      loadNoticias();
+    }
+
+    function loadMore() {
+      currentOffset += PAGE_SIZE;
+      loadNoticias(true);
+    }
+
+    loadNoticias();
+  </script>
+</body>
+</html>

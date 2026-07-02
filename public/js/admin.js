@@ -309,16 +309,40 @@ function renderEventosAdmin(eventos) {
             </td>
             <td>${escapeHtml(c.nombre)}<br><small>${escapeHtml(c.telefono)}</small></td>
             <td><span class="urgencia-pill urgencia-${c.urgencia}">${c.urgencia}</span></td>
-            <td>
-              <button onclick="moderar('resolver','chulito',${c.id})" class="btn btn-sm btn-success">✓</button>
-              <button onclick="moderar('eliminar','chulito',${c.id})" class="btn btn-sm btn-danger">🗑</button>
-              <a href="/evento/${c.id}" target="_blank" class="btn btn-sm btn-outline">→</a>
+            <td style="white-space:nowrap">
+              <button onclick="eliminarEvento(${c.id})" class="btn btn-sm btn-danger" title="Eliminar" style="padding:6px 12px">🗑 Eliminar</button>
+              <button onclick="resolverEvento(${c.id})" class="btn btn-sm btn-success" title="Marcar como resuelto" style="padding:6px 12px">✓ Resolver</button>
+              <a href="/evento/${c.id}" target="_blank" class="btn btn-sm btn-outline" style="padding:6px 12px">Ver →</a>
             </td>
           </tr>
         `).join('')}
       </tbody>
     </table>
   `;
+}
+
+// Eliminar evento (con confirmación)
+async function eliminarEvento(id) {
+  if (!confirm(`¿Eliminar el evento #${id}?\n\nEsto lo ocultará del mapa y de la lista pública. No se puede deshacer.`)) return;
+  try {
+    await adminApi(`/api/admin/moderar/eliminar/chulito/${id}`, { method: 'POST' });
+    showToast(`✅ Evento #${id} eliminado`, 'success');
+    loadEventosAdmin();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+}
+
+// Marcar evento como resuelto
+async function resolverEvento(id) {
+  if (!confirm(`¿Marcar el evento #${id} como resuelto?\n\nSe cambiará a color verde en el mapa.`)) return;
+  try {
+    await adminApi(`/api/admin/moderar/resolver/chulito/${id}`, { method: 'POST' });
+    showToast(`✅ Evento #${id} marcado como resuelto`, 'success');
+    loadEventosAdmin();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
 }
 
 // ----------------------------------------------------------
