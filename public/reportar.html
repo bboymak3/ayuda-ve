@@ -279,7 +279,7 @@
       body.titulo = body.requerimiento.slice(0, 80);
 
       try {
-        const data = await api('/api/eventos', { method: 'POST', body });
+        const data = await api('/api/chulitos', { method: 'POST', body });
         showSuccess(data, 'evento');
       } catch (e) {
         showToast('❌ ' + e.message, 'error');
@@ -289,6 +289,8 @@
     }
 
     function showSuccess(data, tipo) {
+      // Mapear tipo visible al endpoint real de la URL
+      const urlTipo = tipo === 'evento' ? 'chulito' : tipo;
       const resultado = document.getElementById('resultado');
       let html = `
         <div class="alert alert-success">
@@ -320,7 +322,7 @@
 
       html += `
         <div class="flex gap-1 mt-2">
-          <a href="/${tipo}/${data.id}" class="btn btn-primary">Ver mi publicación →</a>
+          <a href="/${urlTipo}/${data.id}" class="btn btn-primary">Ver mi publicación →</a>
           <a href="/mapa.html" class="btn btn-outline">Ver en mapa</a>
           <button onclick="location.reload()" class="btn btn-outline">Publicar otra</button>
         </div>

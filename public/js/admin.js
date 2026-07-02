@@ -219,9 +219,9 @@ async function loadModerar() {
       `).join('');
     }
 
-    if (data.eventos.length > 0) {
-      html += `<h3 class="mt-3">📍 Eventos recientes (${data.eventos.length})</h3>`;
-      html += data.eventos.slice(0, 20).map(c => `
+    if (data.chulitos.length > 0) {
+      html += `<h3 class="mt-3">📍 Eventos recientes (${data.chulitos.length})</h3>`;
+      html += data.chulitos.slice(0, 20).map(c => `
         <div class="card">
           <div class="card-meta">
             <span class="urgencia-pill urgencia-${c.urgencia}">${c.urgencia}</span>
@@ -232,15 +232,15 @@ async function loadModerar() {
           <p class="card-description">${escapeHtml(c.requerimiento)}</p>
           <div class="text-sm">👤 ${escapeHtml(c.nombre)} · 📞 ${escapeHtml(c.telefono)}</div>
           <div class="card-actions">
-            <button onclick="moderar('resolver','evento',${c.id})" class="btn btn-sm btn-success">✓ Resolver</button>
-            <button onclick="moderar('eliminar','evento',${c.id})" class="btn btn-sm btn-danger">🗑 Eliminar</button>
-            <a href="/evento/${c.id}" target="_blank" class="btn btn-sm btn-outline">Ver ficha →</a>
+            <button onclick="moderar('resolver','chulito',${c.id})" class="btn btn-sm btn-success">✓ Resolver</button>
+            <button onclick="moderar('eliminar','chulito',${c.id})" class="btn btn-sm btn-danger">🗑 Eliminar</button>
+            <a href="/chulito/${c.id}" target="_blank" class="btn btn-sm btn-outline">Ver ficha →</a>
           </div>
         </div>
       `).join('');
     }
 
-    if (data.reportes.length === 0 && data.eventos.length === 0) {
+    if (data.reportes.length === 0 && data.chulitos.length === 0) {
       html = '<div class="alert alert-success">✅ No hay nada pendiente. ¡Todo al día!</div>';
     }
 
@@ -270,8 +270,8 @@ async function loadEventosAdmin() {
   const list = document.getElementById('eventos-list');
   list.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div></div>';
   try {
-    const data = await adminApi('/api/eventos?limit=500&estado=activo');
-    eventosCache = data.eventos;
+    const data = await adminApi('/api/chulitos?limit=500&estado=activo');
+    eventosCache = data.chulitos;
     renderEventosAdmin(eventosCache);
   } catch (e) {
     list.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
@@ -310,9 +310,9 @@ function renderEventosAdmin(eventos) {
             <td>${escapeHtml(c.nombre)}<br><small>${escapeHtml(c.telefono)}</small></td>
             <td><span class="urgencia-pill urgencia-${c.urgencia}">${c.urgencia}</span></td>
             <td>
-              <button onclick="moderar('resolver','evento',${c.id})" class="btn btn-sm btn-success">✓</button>
-              <button onclick="moderar('eliminar','evento',${c.id})" class="btn btn-sm btn-danger">🗑</button>
-              <a href="/evento/${c.id}" target="_blank" class="btn btn-sm btn-outline">→</a>
+              <button onclick="moderar('resolver','chulito',${c.id})" class="btn btn-sm btn-success">✓</button>
+              <button onclick="moderar('eliminar','chulito',${c.id})" class="btn btn-sm btn-danger">🗑</button>
+              <a href="/chulito/${c.id}" target="_blank" class="btn btn-sm btn-outline">→</a>
             </td>
           </tr>
         `).join('')}
@@ -357,7 +357,7 @@ async function cargaRapida(event) {
     if (data.tipo === 'reporte') {
       window.open(`/reporte/${data.id}`, '_blank');
     } else {
-      window.open(`/evento/${data.id}`, '_blank');
+      window.open(`/chulito/${data.id}`, '_blank');
     }
   } catch (e) {
     showToast('❌ ' + e.message, 'error');

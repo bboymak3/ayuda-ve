@@ -141,7 +141,7 @@ function renderHTML(p, isAdmin) {
         <h3 class="card-title">${escapeHtml(c.titulo)}</h3>
         <p class="card-description">${escapeHtml((c.requerimiento || '').slice(0, 200))}</p>
         <div class="card-actions">
-          <a href="/evento/${c.id}" class="btn btn-sm btn-primary">Ver evento →</a>
+          <a href="/chulito/${c.id}" class="btn btn-sm btn-primary">Ver evento →</a>
           <a href="/mapa.html" class="btn btn-sm btn-outline">Ver en mapa</a>
         </div>
       </div>

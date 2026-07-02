@@ -48,7 +48,7 @@ function initMap() {
 // ----------------------------------------------------------
 async function loadEventos() {
   try {
-    const url = `/api/eventos?limit=2000${currentFilter === 'resuelto' ? '&estado=resuelto' : '&estado=activo'}`;
+    const url = `/api/chulitos?limit=2000${currentFilter === 'resuelto' ? '&estado=resuelto' : '&estado=activo'}`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -57,7 +57,7 @@ async function loadEventos() {
     markers = [];
 
     // Agregar nuevos
-    for (const c of data.eventos) {
+    for (const c of data.chulitos) {
       // Filtrar por tipo si aplica
       if (currentFilter !== 'all' && currentFilter !== 'resuelto') {
         if (c.tipo !== currentFilter) continue;
@@ -129,7 +129,7 @@ function buildPopup(c) {
       <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:8px">🕒 ${fecha}</div>
       <div style="display:flex;gap:4px;flex-wrap:wrap">
         ${c.estado !== 'resuelto' ? `<button onclick="markResolved(${c.id})" class="btn btn-sm btn-success">✓ Marcar resuelto</button>` : ''}
-        <a href="/evento/${c.id}" class="btn btn-sm btn-outline">Ver ficha →</a>
+        <a href="/chulito/${c.id}" class="btn btn-sm btn-outline">Ver ficha →</a>
       </div>
     </div>
   `;
@@ -217,7 +217,7 @@ async function submitEvento(event, lat, lng) {
   };
 
   try {
-    const res = await fetch('/api/eventos', {
+    const res = await fetch('/api/chulitos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -267,7 +267,7 @@ async function markResolved(id) {
   try {
     // Necesitamos token admin o el mismo usuario?
     // Por ahora permitimos a cualquiera marcar como resuelto
-    const res = await fetch(`/api/eventos/${id}`, {
+    const res = await fetch(`/api/chulitos/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ estado: 'resuelto' }),
