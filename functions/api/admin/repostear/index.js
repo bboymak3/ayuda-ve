@@ -28,9 +28,32 @@ export async function onRequestPost({ env, request }) {
 
   const body = await readJsonBody(request);
 
-  // Validaciones básicas
-  if (!body.titulo || !body.descripcion) {
-    return error('Título y descripción son obligatorios', 422);
+  // Validaciones básicas - solo título es obligatorio (la descripción se auto-genera)
+  let titulo = (body.titulo || '').trim();
+  let descripcion = (body.descripcion || '').trim();
+
+  // Si es FB embed y no hay título, auto-generar de la URL
+  if (!titulo && body.tipo_contenido === 'facebook_embed' && body.url_origen) {
+    const m = String(body.url_origen).match(/facebook\.com\/([^\/]+)\/posts/i);
+    if (m) {
+      const usuario = m[1].replace(/[._-]/g, ' ');
+      titulo = `Post de ${usuario} (Facebook)`;
+    } else {
+      titulo = 'Post de Facebook';
+    }
+  }
+
+  // Si es FB embed y no hay descripción, usar placeholder
+  if (!descripcion && body.tipo_contenido === 'facebook_embed') {
+    descripcion = 'Ver publicación original de Facebook (mostrada abajo como embed).';
+  }
+
+  if (!titulo) {
+    return error('El título es obligatorio (o proporciona URL de Facebook para auto-generarlo)', 422);
+  }
+
+  if (!descripcion) {
+    descripcion = 'Sin descripción';
   }
 
   const tipo = body.tipo || 'informacion';
@@ -51,8 +74,8 @@ export async function onRequestPost({ env, request }) {
     return error('Para Facebook embed debes pegar el código iframe completo', 422);
   }
 
-  // Extraer categorías automáticamente
-  const textoCompleto = `${body.titulo} ${body.descripcion}`;
+  // Extraer categorías automáticamente (usar titulo/descripcion ya procesados)
+  const textoCompleto = `${titulo} ${descripcion}`;
   const categorias = await extractCategories(textoCompleto, env.DB);
 
   const sectorId = body.sector_id || 8; // default: Información útil
@@ -77,8 +100,8 @@ export async function onRequestPost({ env, request }) {
   ).bind(
     parseInt(sectorId, 10),
     tipo,
-    sanitize(body.titulo),
-    sanitize(body.descripcion),
+    sanitize(titulo),
+    sanitize(descripcion),
     sanitize(categorias[0] || null),
     sanitize(body.contacto_nombre || null),
     sanitize(body.contacto_telefono || null),
@@ -107,12 +130,12 @@ export async function onRequestPost({ env, request }) {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', 'manual', ?, ?, ?)`
     ).bind(
       tipo,
-      sanitize(body.titulo),
-      sanitize(body.descripcion),
+      sanitize(titulo),
+      sanitize(descripcion),
       categorias[0] || null,
       sanitize(body.contacto_nombre || 'Repost'),
       sanitize(body.contacto_telefono || ''),
-      sanitize(body.descripcion),
+      sanitize(descripcion),
       sanitize(body.ubicacion_direccion || body.ubicacion_ciudad || ''),
       parseFloat(body.lat),
       parseFloat(body.lng),

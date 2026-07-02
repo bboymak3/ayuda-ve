@@ -94,14 +94,16 @@
         <hr class="mb-2 mt-2" style="border:none;border-top:1px solid var(--color-border)">
 
         <!-- Datos del contenido -->
-        <div class="form-group">
-          <label class="form-label">Título *</label>
-          <input id="titulo" type="text" class="form-input" required placeholder="Título corto del contenido">
+        <div class="form-group" id="group-titulo">
+          <label class="form-label">Título <span id="titulo-req" class="req">*</span></label>
+          <input id="titulo" type="text" class="form-input" placeholder="Se auto-genera del embed de Facebook">
+          <div class="form-help" id="titulo-help">Si es embed de Facebook, déjalo vacío: se generará automáticamente de la URL.</div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Descripción / Resumen *</label>
-          <textarea id="descripcion" class="form-textarea" required style="min-height:120px" placeholder="Pega aquí el texto del post, o escribe un resumen de lo que se ve en el video/imagen"></textarea>
+        <div class="form-group" id="group-descripcion">
+          <label class="form-label">Descripción / Resumen <span id="desc-req" class="req">*</span></label>
+          <textarea id="descripcion" class="form-textarea" style="min-height:80px" placeholder="Opcional para embed de Facebook (el iframe ya muestra el contenido)"></textarea>
+          <div class="form-help" id="desc-help">Para embed de Facebook: déjalo vacío, el iframe muestra el post completo.</div>
         </div>
 
         <div class="grid-2">
@@ -233,8 +235,84 @@
       });
       const map = { facebook_embed: 'lbl-fb', imagen_url: 'lbl-img', video_url: 'lbl-vid', manual: 'lbl-manual' };
       document.getElementById(map[tipo]).style.background = '#dbeafe';
+
+      // Ajustar requerido/placeholder según el tipo
+      const tituloInput = document.getElementById('titulo');
+      const tituloReq = document.getElementById('titulo-req');
+      const tituloHelp = document.getElementById('titulo-help');
+      const descInput = document.getElementById('descripcion');
+      const descReq = document.getElementById('desc-req');
+      const descHelp = document.getElementById('desc-help');
+
+      if (tipo === 'facebook_embed') {
+        // FB embed: título y descripción opcionales (se auto-generan del embed)
+        tituloInput.required = false;
+        tituloReq.style.display = 'none';
+        tituloInput.placeholder = 'Auto-generado de la URL de Facebook (déjalo vacío)';
+        tituloHelp.textContent = '💡 Para embed de Facebook: déjalo vacío. Se generará automáticamente.';
+        tituloHelp.style.background = '#dbeafe';
+        tituloHelp.style.padding = '4px 8px';
+        tituloHelp.style.borderRadius = '4px';
+
+        descInput.required = false;
+        descReq.style.display = 'none';
+        descInput.placeholder = 'Opcional — el iframe de Facebook ya muestra el post completo';
+        descHelp.textContent = '💡 Para embed de Facebook: el iframe muestra el contenido real. Solo agrega descripción si quieres contexto adicional.';
+        descHelp.style.background = '#dbeafe';
+        descHelp.style.padding = '4px 8px';
+        descHelp.style.borderRadius = '4px';
+
+      } else if (tipo === 'imagen_url') {
+        tituloInput.required = true;
+        tituloReq.style.display = '';
+        tituloInput.placeholder = 'Título corto que describa la imagen';
+        tituloHelp.textContent = 'Título que aparecerá en la ficha y noticias.';
+        tituloHelp.style.background = '';
+        tituloHelp.style.padding = '';
+
+        descInput.required = false;
+        descReq.style.display = 'none';
+        descInput.placeholder = 'Opcional: contexto o qué muestra la imagen';
+        descHelp.textContent = 'La imagen se mostrará completa. Agrega descripción solo si ayuda.';
+        descHelp.style.background = '';
+        descHelp.style.padding = '';
+
+      } else {
+        // manual o video_url: ambos requeridos
+        tituloInput.required = true;
+        tituloReq.style.display = '';
+        tituloInput.placeholder = 'Título corto del contenido';
+        tituloHelp.textContent = 'Título que aparecerá en la ficha y noticias.';
+        tituloHelp.style.background = '';
+        tituloHelp.style.padding = '';
+
+        descInput.required = true;
+        descReq.style.display = '';
+        descInput.placeholder = 'Pega aquí el texto del post, o escribe un resumen de lo que se ve en el video/imagen';
+        descHelp.textContent = 'Descripción visible en la ficha y noticias.';
+        descHelp.style.background = '';
+        descHelp.style.padding = '';
+      }
     }
     switchTipo();
+
+    // Cuando se extrae la URL del embed, auto-generar título
+    const originalExtraerUrl = extraerUrlDeEmbed;
+    extraerUrlDeEmbed = function() {
+      originalExtraerUrl();
+      const url = document.getElementById('url_origen').value;
+      if (url && !document.getElementById('titulo').value) {
+        // Generar título descriptivo de la URL
+        // Ej: https://www.facebook.com/JoseElLegionario/posts/123 → "Post de JoseElLegionario"
+        const m = url.match(/facebook\.com\/([^\/]+)\/posts/i);
+        if (m) {
+          const usuario = m[1].replace(/[._-]/g, ' ');
+          const tituloGen = `Post de ${usuario} (Facebook)`;
+          document.getElementById('titulo').value = tituloGen;
+          showToast(`✅ Título auto-generado: "${tituloGen}"`, 'info', 4000);
+        }
+      }
+    };
 
     // Checkbox crear_chulito
     document.getElementById('crear_chulito').addEventListener('change', (e) => {
@@ -292,13 +370,41 @@
       btn.innerHTML = '<span class="spinner"></span> Publicando...';
 
       const tipoContenido = document.querySelector('input[name="tipo_contenido"]:checked').value;
+      let titulo = document.getElementById('titulo').value.trim();
+      let descripcion = document.getElementById('descripcion').value.trim();
+      const urlOrigen = document.getElementById('url_origen').value.trim();
+
+      // Auto-generar título si es FB embed y está vacío
+      if (tipoContenido === 'facebook_embed' && !titulo && urlOrigen) {
+        const m = urlOrigen.match(/facebook\.com\/([^\/]+)\/posts/i);
+        if (m) {
+          const usuario = m[1].replace(/[._-]/g, ' ');
+          titulo = `Post de ${usuario} (Facebook)`;
+        } else {
+          titulo = 'Post de Facebook';
+        }
+      }
+
+      // Auto-generar descripción si es FB embed y está vacía
+      if (tipoContenido === 'facebook_embed' && !descripcion) {
+        descripcion = 'Ver publicación original de Facebook (mostrada abajo como embed).';
+      }
+
+      // Validar título al final (siempre requerido para la BD)
+      if (!titulo) {
+        showToast('❌ El título es obligatorio', 'error');
+        btn.disabled = false;
+        btn.textContent = '📤 Publicar repost';
+        return;
+      }
+
       const body = {
         tipo_contenido: tipoContenido,
-        url_origen: document.getElementById('url_origen').value || null,
+        url_origen: urlOrigen || null,
         embed_html: document.getElementById('embed_html').value || null,
         imagen_url: document.getElementById('imagen_url').value || null,
-        titulo: document.getElementById('titulo').value,
-        descripcion: document.getElementById('descripcion').value,
+        titulo: titulo,
+        descripcion: descripcion || 'Sin descripción',
         tipo: document.getElementById('tipo').value,
         sector_id: parseInt(document.getElementById('sector_id').value, 10) || 8,
         urgencia: document.getElementById('urgencia').value,
