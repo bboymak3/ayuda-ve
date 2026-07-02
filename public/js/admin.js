@@ -113,7 +113,7 @@ function switchTab(tab) {
   // Cargar datos según tab
   if (tab === 'dashboard') loadDashboard();
   if (tab === 'moderar') loadModerar();
-  if (tab === 'chulitos') loadChulitosAdmin();
+  if (tab === 'eventos') loadEventosAdmin();
   if (tab === 'perfiles') loadPerfilesAdmin();
   if (tab === 'abuso') loadAbusos();
   if (tab === 'categorias') loadCategoriasAdmin();
@@ -132,8 +132,8 @@ async function loadDashboard() {
 
     grid.innerHTML = `
       <div class="stat-card">
-        <div class="stat-value">${s.hoy?.chulitos_hoy || 0}</div>
-        <div class="stat-label">Chulitos hoy</div>
+        <div class="stat-value">${s.hoy?.eventos_hoy || 0}</div>
+        <div class="stat-label">Eventos hoy</div>
       </div>
       <div class="stat-card">
         <div class="stat-value">${s.hoy?.reportes_hoy || 0}</div>
@@ -144,8 +144,8 @@ async function loadDashboard() {
         <div class="stat-label">Pendientes moderar</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value" style="color:#10b981">${s.hoy?.chulitos_activos || 0}</div>
-        <div class="stat-label">Chulitos activos</div>
+        <div class="stat-value" style="color:#10b981">${s.hoy?.eventos_activos || 0}</div>
+        <div class="stat-label">Eventos activos</div>
       </div>
     `;
 
@@ -219,9 +219,9 @@ async function loadModerar() {
       `).join('');
     }
 
-    if (data.chulitos.length > 0) {
-      html += `<h3 class="mt-3">📍 Chulitos recientes (${data.chulitos.length})</h3>`;
-      html += data.chulitos.slice(0, 20).map(c => `
+    if (data.eventos.length > 0) {
+      html += `<h3 class="mt-3">📍 Eventos recientes (${data.eventos.length})</h3>`;
+      html += data.eventos.slice(0, 20).map(c => `
         <div class="card">
           <div class="card-meta">
             <span class="urgencia-pill urgencia-${c.urgencia}">${c.urgencia}</span>
@@ -232,15 +232,15 @@ async function loadModerar() {
           <p class="card-description">${escapeHtml(c.requerimiento)}</p>
           <div class="text-sm">👤 ${escapeHtml(c.nombre)} · 📞 ${escapeHtml(c.telefono)}</div>
           <div class="card-actions">
-            <button onclick="moderar('resolver','chulito',${c.id})" class="btn btn-sm btn-success">✓ Resolver</button>
-            <button onclick="moderar('eliminar','chulito',${c.id})" class="btn btn-sm btn-danger">🗑 Eliminar</button>
-            <a href="/chulito/${c.id}" target="_blank" class="btn btn-sm btn-outline">Ver ficha →</a>
+            <button onclick="moderar('resolver','evento',${c.id})" class="btn btn-sm btn-success">✓ Resolver</button>
+            <button onclick="moderar('eliminar','evento',${c.id})" class="btn btn-sm btn-danger">🗑 Eliminar</button>
+            <a href="/evento/${c.id}" target="_blank" class="btn btn-sm btn-outline">Ver ficha →</a>
           </div>
         </div>
       `).join('');
     }
 
-    if (data.reportes.length === 0 && data.chulitos.length === 0) {
+    if (data.reportes.length === 0 && data.eventos.length === 0) {
       html = '<div class="alert alert-success">✅ No hay nada pendiente. ¡Todo al día!</div>';
     }
 
@@ -262,44 +262,44 @@ async function moderar(accion, entidad, id) {
 }
 
 // ----------------------------------------------------------
-// Chulitos (gestión)
+// Eventos (gestión)
 // ----------------------------------------------------------
-let chulitosCache = [];
+let eventosCache = [];
 
-async function loadChulitosAdmin() {
-  const list = document.getElementById('chulitos-list');
+async function loadEventosAdmin() {
+  const list = document.getElementById('eventos-list');
   list.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div></div>';
   try {
-    const data = await adminApi('/api/chulitos?limit=500&estado=activo');
-    chulitosCache = data.chulitos;
-    renderChulitosAdmin(chulitosCache);
+    const data = await adminApi('/api/eventos?limit=500&estado=activo');
+    eventosCache = data.eventos;
+    renderEventosAdmin(eventosCache);
   } catch (e) {
     list.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
   }
 }
 
-function searchChulitos() {
-  const q = document.getElementById('chulito-search').value.toLowerCase();
-  const filtered = chulitosCache.filter(c =>
+function searchEventos() {
+  const q = document.getElementById('evento-search').value.toLowerCase();
+  const filtered = eventosCache.filter(c =>
     c.titulo?.toLowerCase().includes(q) ||
     c.requerimiento?.toLowerCase().includes(q) ||
     c.nombre?.toLowerCase().includes(q) ||
     c.telefono?.includes(q)
   );
-  renderChulitosAdmin(filtered);
+  renderEventosAdmin(filtered);
 }
 
-function renderChulitosAdmin(chulitos) {
-  const list = document.getElementById('chulitos-list');
-  if (chulitos.length === 0) {
-    list.innerHTML = '<p class="text-muted">No hay chulitos.</p>';
+function renderEventosAdmin(eventos) {
+  const list = document.getElementById('eventos-list');
+  if (eventos.length === 0) {
+    list.innerHTML = '<p class="text-muted">No hay eventos.</p>';
     return;
   }
   list.innerHTML = `
     <table class="admin-table">
       <thead><tr><th>ID</th><th>Tipo</th><th>Detalle</th><th>Contacto</th><th>Urgencia</th><th>Acciones</th></tr></thead>
       <tbody>
-        ${chulitos.map(c => `
+        ${eventos.map(c => `
           <tr>
             <td>${c.id}</td>
             <td>${c.tipo}</td>
@@ -310,9 +310,9 @@ function renderChulitosAdmin(chulitos) {
             <td>${escapeHtml(c.nombre)}<br><small>${escapeHtml(c.telefono)}</small></td>
             <td><span class="urgencia-pill urgencia-${c.urgencia}">${c.urgencia}</span></td>
             <td>
-              <button onclick="moderar('resolver','chulito',${c.id})" class="btn btn-sm btn-success">✓</button>
-              <button onclick="moderar('eliminar','chulito',${c.id})" class="btn btn-sm btn-danger">🗑</button>
-              <a href="/chulito/${c.id}" target="_blank" class="btn btn-sm btn-outline">→</a>
+              <button onclick="moderar('resolver','evento',${c.id})" class="btn btn-sm btn-success">✓</button>
+              <button onclick="moderar('eliminar','evento',${c.id})" class="btn btn-sm btn-danger">🗑</button>
+              <a href="/evento/${c.id}" target="_blank" class="btn btn-sm btn-outline">→</a>
             </td>
           </tr>
         `).join('')}
@@ -357,7 +357,7 @@ async function cargaRapida(event) {
     if (data.tipo === 'reporte') {
       window.open(`/reporte/${data.id}`, '_blank');
     } else {
-      window.open(`/chulito/${data.id}`, '_blank');
+      window.open(`/evento/${data.id}`, '_blank');
     }
   } catch (e) {
     showToast('❌ ' + e.message, 'error');
@@ -370,6 +370,64 @@ async function cargaRapida(event) {
 // ----------------------------------------------------------
 // Procesar video
 // ----------------------------------------------------------
+
+// Cambiar entre modo URL y modo archivo
+function switchVideoMode(mode) {
+  const urlForm = document.getElementById('form-video-url');
+  const fileForm = document.getElementById('form-video-file');
+  const urlTab = document.getElementById('video-tab-url');
+  const fileTab = document.getElementById('video-tab-file');
+
+  if (mode === 'url') {
+    urlForm.style.display = '';
+    fileForm.style.display = 'none';
+    urlTab.style.background = 'white';
+    fileTab.style.background = 'transparent';
+  } else {
+    urlForm.style.display = 'none';
+    fileForm.style.display = '';
+    urlTab.style.background = 'transparent';
+    fileTab.style.background = 'white';
+  }
+}
+
+// Procesar video desde URL
+async function procesarVideoUrl(event) {
+  event.preventDefault();
+  const form = event.target;
+  const btn = form.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Descargando y procesando...';
+
+  const formData = new FormData(form);
+  const body = {
+    url: formData.get('url'),
+    crear_ficha: formData.get('crear_ficha') === 'true',
+  };
+  if (formData.get('reporte_id')) body.reporte_id = parseInt(formData.get('reporte_id'), 10);
+  if (formData.get('chulito_id')) body.chulito_id = parseInt(formData.get('chulito_id'), 10);
+
+  const result = document.getElementById('video-result');
+  result.innerHTML = '<div class="alert alert-info">⏳ Descargando audio desde la URL y transcribiendo con Whisper... Esto puede tardar 2-3 minutos.</div>';
+
+  try {
+    const res = await fetch('/api/transcribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error');
+    renderVideoResult(data);
+  } catch (e) {
+    result.innerHTML = `<div class="alert alert-error">❌ ${escapeHtml(e.message)}<br><br><small>💡 Si el error es por descarga, prueba con el modo "Subir archivo". Algunas plataformas (Facebook, Instagram) bloquean descargas automáticas.</small></div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🎯 Procesar desde URL';
+  }
+}
+
+// Procesar video desde archivo
 async function procesarVideo(event) {
   event.preventDefault();
   const form = event.target;
@@ -389,64 +447,69 @@ async function procesarVideo(event) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Error');
-
-    result.innerHTML = `
-      <div class="alert alert-success">
-        ✅ <strong>¡Procesado correctamente!</strong>
-      </div>
-
-      ${data.ficha_creada ? `
-        <div class="card" style="border-left:4px solid var(--color-success);background:#ecfdf5">
-          <h3 class="card-title">📄 Ficha creada automáticamente</h3>
-          <p><strong>ID:</strong> #${data.ficha_creada.id}</p>
-          <p><strong>Título:</strong> ${escapeHtml(data.ficha_creada.titulo)}</p>
-          <p><strong>Categoría:</strong> <code>${escapeHtml(data.ficha_creada.categoria || 'N/A')}</code></p>
-          <p><strong>Urgencia:</strong> <span class="urgencia-pill urgencia-${data.ficha_creada.urgencia}">${data.ficha_creada.urgencia}</span></p>
-          <div class="card-actions mt-2">
-            <a href="${data.ficha_creada.url}" target="_blank" class="btn btn-primary">🔗 Abrir ficha →</a>
-            <button onclick="navigator.clipboard.writeText('${data.ficha_creada.url_completa}');showToast('URL copiada','success')" class="btn btn-outline">📋 Copiar URL</button>
-          </div>
-        </div>
-      ` : ''}
-
-      ${data.perfil ? `
-        <div class="card mt-2" style="border-left:4px solid ${data.perfil.es_reiterativo ? 'var(--color-warning)' : 'var(--color-primary)'};background:${data.perfil.es_reiterativo ? '#fffbeb' : '#eff6ff'}">
-          <h3 class="card-title">${data.perfil.es_reiterativo ? '📊' : '👤'} Perfil ${data.perfil.es_reiterativo ? 'reiterativo detectado' : 'creado'}</h3>
-          <p><strong>Nombre:</strong> ${escapeHtml(data.perfil.nombre)}</p>
-          ${data.perfil.telefono ? `<p><strong>Teléfono:</strong> ${escapeHtml(data.perfil.telefono)}</p>` : ''}
-          <p><strong>Total reportes:</strong> ${data.perfil.total_reportes}</p>
-          <p><strong>Detección:</strong> ${escapeHtml(data.perfil.match_strategy)}</p>
-          ${data.perfil.es_reiterativo ? '<p class="text-warning" style="color:#92400e">⚠️ Esta persona ya tiene reportes previos. Revisa el historial.</p>' : ''}
-          <div class="card-actions mt-2">
-            <a href="${data.perfil.url}" target="_blank" class="btn btn-primary">👤 Ver perfil completo →</a>
-          </div>
-        </div>
-      ` : ''}
-
-      <div class="card mt-2">
-        <h3 class="card-title">📝 Transcripción completa (${data.longitud} caracteres)</h3>
-        <div style="padding:1rem;background:#f8fafc;border-radius:8px;white-space:pre-wrap;font-size:0.95rem;max-height:300px;overflow:auto">${escapeHtml(data.transcripcion)}</div>
-      </div>
-
-      <div class="card mt-2">
-        <h3 class="card-title">🤖 Análisis IA</h3>
-        <div style="padding:1rem;background:#f8fafc;border-radius:8px">
-          <p><strong>Resumen:</strong> ${escapeHtml(data.resumen.resumen || '')}</p>
-          ${data.resumen.ubicacion ? `<p><strong>Ubicación:</strong> ${escapeHtml(data.resumen.ubicacion)}</p>` : ''}
-          ${data.contacto_detectado?.telefono ? `<p><strong>Teléfono detectado:</strong> ${escapeHtml(data.contacto_detectado.telefono)}</p>` : ''}
-          ${data.contacto_detectado?.nombre ? `<p><strong>Nombre detectado:</strong> ${escapeHtml(data.contacto_detectado.nombre)}</p>` : ''}
-          ${data.contacto_detectado?.ubicacion ? `<p><strong>Ubicación detectada:</strong> ${escapeHtml(data.contacto_detectado.ubicacion)}</p>` : ''}
-          ${data.categoria_detectada ? `<p><strong>Categoría detectada:</strong> <code>${escapeHtml(data.categoria_detectada)}</code></p>` : ''}
-          ${data.resumen.urgencia ? `<p><strong>Urgencia sugerida:</strong> ${escapeHtml(data.resumen.urgencia)}</p>` : ''}
-        </div>
-      </div>
-    `;
+    renderVideoResult(data);
   } catch (e) {
     result.innerHTML = `<div class="alert alert-error">❌ ${escapeHtml(e.message)}</div>`;
   } finally {
     btn.disabled = false;
     btn.textContent = '🎯 Transcribir y resumir';
   }
+}
+
+// Renderizar resultado (común para URL y archivo)
+function renderVideoResult(data) {
+  const result = document.getElementById('video-result');
+  result.innerHTML = `
+    <div class="alert alert-success">
+      ✅ <strong>¡Procesado correctamente!</strong>
+    </div>
+
+    ${data.ficha_creada ? `
+      <div class="card" style="border-left:4px solid var(--color-success);background:#ecfdf5">
+        <h3 class="card-title">📄 Ficha creada automáticamente</h3>
+        <p><strong>ID:</strong> #${data.ficha_creada.id}</p>
+        <p><strong>Título:</strong> ${escapeHtml(data.ficha_creada.titulo)}</p>
+        <p><strong>Categoría:</strong> <code>${escapeHtml(data.ficha_creada.categoria || 'N/A')}</code></p>
+        <p><strong>Urgencia:</strong> <span class="urgencia-pill urgencia-${data.ficha_creada.urgencia}">${data.ficha_creada.urgencia}</span></p>
+        <div class="card-actions mt-2">
+          <a href="${data.ficha_creada.url}" target="_blank" class="btn btn-primary">🔗 Abrir ficha →</a>
+          <button onclick="navigator.clipboard.writeText('${data.ficha_creada.url_completa}');showToast('URL copiada','success')" class="btn btn-outline">📋 Copiar URL</button>
+        </div>
+      </div>
+    ` : ''}
+
+    ${data.perfil ? `
+      <div class="card mt-2" style="border-left:4px solid ${data.perfil.es_reiterativo ? 'var(--color-warning)' : 'var(--color-primary)'};background:${data.perfil.es_reiterativo ? '#fffbeb' : '#eff6ff'}">
+        <h3 class="card-title">${data.perfil.es_reiterativo ? '📊' : '👤'} Perfil ${data.perfil.es_reiterativo ? 'reiterativo detectado' : 'creado'}</h3>
+        <p><strong>Nombre:</strong> ${escapeHtml(data.perfil.nombre)}</p>
+        ${data.perfil.telefono ? `<p><strong>Teléfono:</strong> ${escapeHtml(data.perfil.telefono)}</p>` : ''}
+        <p><strong>Total reportes:</strong> ${data.perfil.total_reportes}</p>
+        <p><strong>Detección:</strong> ${escapeHtml(data.perfil.match_strategy)}</p>
+        ${data.perfil.es_reiterativo ? '<p class="text-warning" style="color:#92400e">⚠️ Esta persona ya tiene reportes previos. Revisa el historial.</p>' : ''}
+        <div class="card-actions mt-2">
+          <a href="${data.perfil.url}" target="_blank" class="btn btn-primary">👤 Ver perfil completo →</a>
+        </div>
+      </div>
+    ` : ''}
+
+    <div class="card mt-2">
+      <h3 class="card-title">📝 Transcripción completa (${data.longitud} caracteres)</h3>
+      <div style="padding:1rem;background:#f8fafc;border-radius:8px;white-space:pre-wrap;font-size:0.95rem;max-height:300px;overflow:auto">${escapeHtml(data.transcripcion)}</div>
+    </div>
+
+    <div class="card mt-2">
+      <h3 class="card-title">🤖 Análisis IA</h3>
+      <div style="padding:1rem;background:#f8fafc;border-radius:8px">
+        <p><strong>Resumen:</strong> ${escapeHtml(data.resumen.resumen || '')}</p>
+        ${data.resumen.ubicacion ? `<p><strong>Ubicación:</strong> ${escapeHtml(data.resumen.ubicacion)}</p>` : ''}
+        ${data.contacto_detectado?.telefono ? `<p><strong>Teléfono detectado:</strong> ${escapeHtml(data.contacto_detectado.telefono)}</p>` : ''}
+        ${data.contacto_detectado?.nombre ? `<p><strong>Nombre detectado:</strong> ${escapeHtml(data.contacto_detectado.nombre)}</p>` : ''}
+        ${data.contacto_detectado?.ubicacion ? `<p><strong>Ubicación detectada:</strong> ${escapeHtml(data.contacto_detectado.ubicacion)}</p>` : ''}
+        ${data.categoria_detectada ? `<p><strong>Categoría detectada:</strong> <code>${escapeHtml(data.categoria_detectada)}</code></p>` : ''}
+        ${data.resumen.urgencia ? `<p><strong>Urgencia sugerida:</strong> ${escapeHtml(data.resumen.urgencia)}</p>` : ''}
+      </div>
+    </div>
+  `;
 }
 
 // ----------------------------------------------------------

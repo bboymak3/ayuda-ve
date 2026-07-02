@@ -33,7 +33,7 @@ function renderHTML(p, isAdmin) {
     'lugar': '📍 Lugar',
   }[p.tipo] || p.tipo;
 
-  const totalReportes = (p.reportes?.length || 0) + (p.chulitos?.length || 0);
+  const totalReportes = (p.reportes?.length || 0) + (p.eventos?.length || 0);
   const esReiterativo = totalReportes > 1;
 
   const jsonLd = {
@@ -96,7 +96,7 @@ function renderHTML(p, isAdmin) {
         <h3 class="card-title">📊 Estadísticas</h3>
         <div>Total de reportes: <strong>${totalReportes}</strong></div>
         <div>Reportes detallados: <strong>${p.reportes?.length || 0}</strong></div>
-        <div>Chulitos en mapa: <strong>${p.chulitos?.length || 0}</strong></div>
+        <div>Eventos en mapa: <strong>${p.eventos?.length || 0}</strong></div>
         <div>Videos analizados: <strong>${p.videos?.length || 0}</strong></div>
       </div>
     </div>
@@ -131,8 +131,8 @@ function renderHTML(p, isAdmin) {
       </div>
     `).join('') : '<p class="text-muted">Sin reportes detallados.</p>'}
 
-    <h2 class="section-title mt-3">📍 Chulitos en mapa (${p.chulitos?.length || 0})</h2>
-    ${p.chulitos?.length ? p.chulitos.map(c => `
+    <h2 class="section-title mt-3">📍 Eventos en mapa (${p.eventos?.length || 0})</h2>
+    ${p.eventos?.length ? p.eventos.map(c => `
       <div class="card">
         <div class="card-meta">
           <span class="urgencia-pill urgencia-${c.urgencia}">${c.urgencia}</span>
@@ -141,11 +141,11 @@ function renderHTML(p, isAdmin) {
         <h3 class="card-title">${escapeHtml(c.titulo)}</h3>
         <p class="card-description">${escapeHtml((c.requerimiento || '').slice(0, 200))}</p>
         <div class="card-actions">
-          <a href="/chulito/${c.id}" class="btn btn-sm btn-primary">Ver chulito →</a>
+          <a href="/evento/${c.id}" class="btn btn-sm btn-primary">Ver evento →</a>
           <a href="/mapa.html" class="btn btn-sm btn-outline">Ver en mapa</a>
         </div>
       </div>
-    `).join('') : '<p class="text-muted">Sin chulitos.</p>'}
+    `).join('') : '<p class="text-muted">Sin eventos.</p>'}
 
     ${p.videos?.length ? `
       <h2 class="section-title mt-3">🎥 Videos analizados (${p.videos.length})</h2>

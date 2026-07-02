@@ -7,6 +7,18 @@ let markers = [];
 let currentFilter = 'all';
 let tempMarker = null;
 
+// ----------------------------------------------------------
+// Control del panel de ayuda (plegable)
+// ----------------------------------------------------------
+function closeHelp() {
+  document.getElementById('map-help-panel').style.display = 'none';
+  document.getElementById('map-help-toggle').classList.add('visible');
+}
+function openHelp() {
+  document.getElementById('map-help-panel').style.display = '';
+  document.getElementById('map-help-toggle').classList.remove('visible');
+}
+
 // Centro inicial: Venezuela (aprox)
 const VENEZUELA_CENTER = [8.0, -66.0];
 const VENEZUELA_ZOOM = 6;
@@ -22,21 +34,21 @@ function initMap() {
     maxZoom: 19,
   }).addTo(map);
 
-  // Click en mapa -> abrir formulario de chulito
+  // Click en mapa -> abrir formulario de evento
   map.on('click', function(e) {
-    openChulitoForm(e.latlng.lat, e.latlng.lng);
+    openEventoForm(e.latlng.lat, e.latlng.lng);
   });
 
-  // Cargar chulitos existentes
-  loadChulitos();
+  // Cargar eventos existentes
+  loadEventos();
 }
 
 // ----------------------------------------------------------
-// Cargar chulitos desde la API
+// Cargar eventos desde la API
 // ----------------------------------------------------------
-async function loadChulitos() {
+async function loadEventos() {
   try {
-    const url = `/api/chulitos?limit=2000${currentFilter === 'resuelto' ? '&estado=resuelto' : '&estado=activo'}`;
+    const url = `/api/eventos?limit=2000${currentFilter === 'resuelto' ? '&estado=resuelto' : '&estado=activo'}`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -45,7 +57,7 @@ async function loadChulitos() {
     markers = [];
 
     // Agregar nuevos
-    for (const c of data.chulitos) {
+    for (const c of data.eventos) {
       // Filtrar por tipo si aplica
       if (currentFilter !== 'all' && currentFilter !== 'resuelto') {
         if (c.tipo !== currentFilter) continue;
@@ -65,10 +77,10 @@ async function loadChulitos() {
       markers.push(marker);
     }
 
-    console.log(`Cargados ${markers.length} chulitos`);
+    console.log(`Cargados ${markers.length} eventos`);
   } catch (e) {
-    console.error('Error cargando chulitos:', e);
-    showToast('Error cargando chulitos del mapa', 'error');
+    console.error('Error cargando eventos:', e);
+    showToast('Error cargando eventos del mapa', 'error');
   }
 }
 
@@ -85,7 +97,7 @@ function getMarkerColor(c) {
 }
 
 // ----------------------------------------------------------
-// Construir popup HTML para un chulito
+// Construir popup HTML para un evento
 // ----------------------------------------------------------
 function buildPopup(c) {
   const urgenciaPill = c.estado === 'resuelto'
@@ -117,7 +129,7 @@ function buildPopup(c) {
       <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:8px">🕒 ${fecha}</div>
       <div style="display:flex;gap:4px;flex-wrap:wrap">
         ${c.estado !== 'resuelto' ? `<button onclick="markResolved(${c.id})" class="btn btn-sm btn-success">✓ Marcar resuelto</button>` : ''}
-        <a href="/chulito/${c.id}" class="btn btn-sm btn-outline">Ver ficha →</a>
+        <a href="/evento/${c.id}" class="btn btn-sm btn-outline">Ver ficha →</a>
       </div>
     </div>
   `;
@@ -125,20 +137,20 @@ function buildPopup(c) {
 }
 
 // ----------------------------------------------------------
-// Abrir formulario para crear chulito
+// Abrir formulario para crear evento
 // ----------------------------------------------------------
-function openChulitoForm(lat, lng) {
+function openEventoForm(lat, lng) {
   if (tempMarker) map.removeLayer(tempMarker);
 
   tempMarker = L.marker([lat, lng], { draggable: false }).addTo(map);
 
   const formHtml = `
     <div class="map-popup-form">
-      <div style="font-weight:700;margin-bottom:8px">📌 Nuevo chulito en el mapa</div>
+      <div style="font-weight:700;margin-bottom:8px">📌 Nuevo evento en el mapa</div>
       <div style="font-size:0.85rem;color:#64748b;margin-bottom:10px">
         Coordenadas: ${lat.toFixed(5)}, ${lng.toFixed(5)}
       </div>
-      <form onsubmit="submitChulito(event, ${lat}, ${lng}); return false;" style="display:flex;flex-direction:column;gap:8px">
+      <form onsubmit="submitEvento(event, ${lat}, ${lng}); return false;" style="display:flex;flex-direction:column;gap:8px">
         <div>
           <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px">Tipo *</label>
           <select id="ch-tipo" required style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:4px">
@@ -174,7 +186,7 @@ function openChulitoForm(lat, lng) {
         </div>
         <div style="display:flex;gap:4px;margin-top:4px">
           <button type="submit" class="btn btn-sm btn-primary" style="flex:1">Publicar</button>
-          <button type="button" onclick="cancelChulito()" class="btn btn-sm btn-outline">Cancelar</button>
+          <button type="button" onclick="cancelEvento()" class="btn btn-sm btn-outline">Cancelar</button>
         </div>
       </form>
     </div>
@@ -184,9 +196,9 @@ function openChulitoForm(lat, lng) {
 }
 
 // ----------------------------------------------------------
-// Enviar chulito a la API
+// Enviar evento a la API
 // ----------------------------------------------------------
-async function submitChulito(event, lat, lng) {
+async function submitEvento(event, lat, lng) {
   event.preventDefault();
 
   const btn = event.target.querySelector('button[type="submit"]');
@@ -205,7 +217,7 @@ async function submitChulito(event, lat, lng) {
   };
 
   try {
-    const res = await fetch('/api/chulitos', {
+    const res = await fetch('/api/eventos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -217,14 +229,14 @@ async function submitChulito(event, lat, lng) {
     }
 
     const data = await res.json();
-    showToast('✅ Chulito publicado en el mapa', 'success');
+    showToast('✅ Evento publicado en el mapa', 'success');
 
     // Cerrar popup y remover marker temporal
     map.closePopup();
     if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; }
 
-    // Recargar chulitos
-    loadChulitos();
+    // Recargar eventos
+    loadEventos();
 
     // Mostrar matches si los hay
     if (data.matches && data.matches.length > 0) {
@@ -240,22 +252,22 @@ async function submitChulito(event, lat, lng) {
 }
 
 // ----------------------------------------------------------
-// Cancelar chulito temporal
+// Cancelar evento temporal
 // ----------------------------------------------------------
-function cancelChulito() {
+function cancelEvento() {
   if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; }
 }
 
 // ----------------------------------------------------------
-// Marcar chulito como resuelto
+// Marcar evento como resuelto
 // ----------------------------------------------------------
 async function markResolved(id) {
-  if (!confirm('¿Marcar este chulito como resuelto? Cambiará a color verde.')) return;
+  if (!confirm('¿Marcar este evento como resuelto? Cambiará a color verde.')) return;
 
   try {
     // Necesitamos token admin o el mismo usuario?
     // Por ahora permitimos a cualquiera marcar como resuelto
-    const res = await fetch(`/api/chulitos/${id}`, {
+    const res = await fetch(`/api/eventos/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ estado: 'resuelto' }),
@@ -268,7 +280,7 @@ async function markResolved(id) {
     }
 
     showToast('✅ Marcado como resuelto', 'success');
-    loadChulitos();
+    loadEventos();
   } catch (e) {
     showToast('Error: ' + e.message, 'error');
   }
@@ -325,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.map-filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentFilter = btn.dataset.filter;
-      loadChulitos();
+      loadEventos();
     });
   });
 

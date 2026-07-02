@@ -1,5 +1,5 @@
 // ============================================================
-// functions/chulito/[id].js — Ficha pública de chulito
+// functions/evento/[id].js — Ficha pública de evento
 // ============================================================
 
 export async function onRequestGet({ env, params }) {
@@ -8,15 +8,15 @@ export async function onRequestGet({ env, params }) {
     return new Response('ID inválido', { status: 400 });
   }
 
-  const chulito = await env.DB.prepare(
-    `SELECT * FROM chulitos WHERE id = ?`
+  const evento = await env.DB.prepare(
+    `SELECT * FROM eventos WHERE id = ?`
   ).bind(id).first();
 
-  if (!chulito) {
-    return new Response('Chulito no encontrado', { status: 404 });
+  if (!evento) {
+    return new Response('Evento no encontrado', { status: 404 });
   }
 
-  const html = renderFichaHTML(chulito);
+  const html = renderFichaHTML(evento);
   return new Response(html, {
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
   });

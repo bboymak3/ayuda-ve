@@ -108,7 +108,7 @@ function whatsappLink(phone) {
 }
 
 // ----------------------------------------------------------
-// Crear tarjeta de reporte/chulito (para listas)
+// Crear tarjeta de reporte/evento (para listas)
 // ----------------------------------------------------------
 function renderCard(item, type = 'reporte') {
   const titulo = escapeHtml(item.titulo || (item.requerimiento || '').slice(0, 80) || 'Sin título');
@@ -126,7 +126,7 @@ function renderCard(item, type = 'reporte') {
 
   const link = type === 'reporte'
     ? `/reporte/${item.id}`
-    : `/chulito/${item.id}`;
+    : `/evento/${item.id}`;
 
   const ubicacion = item.ubicacion_texto ||
     [item.ubicacion_ciudad, item.ubicacion_estado].filter(Boolean).join(', ') ||

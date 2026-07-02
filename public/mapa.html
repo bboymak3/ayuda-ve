@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mapa Interactivo — Ayuda VE</title>
-  <meta name="description" content="Mapa interactivo de necesidades y ofertas de ayuda en Venezuela. Haz clic para poner un chulito.">
+  <meta name="description" content="Mapa interactivo de necesidades y ofertas de ayuda en Venezuela. Haz clic para poner un evento.">
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -34,6 +34,70 @@
       font-weight: 500;
     }
     .map-filter-btn.active { background: var(--color-primary); color: white; border-color: var(--color-primary); }
+
+    /* Panel de ayuda flotante, esquina superior derecha, plegable */
+    .map-help-panel {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(15,23,42,0.15);
+      z-index: 1000;
+      max-width: 220px;
+      font-size: 0.8rem;
+      overflow: hidden;
+    }
+    .map-help-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: var(--color-primary);
+      color: white;
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+    .map-help-close {
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0 4px;
+      border-radius: 4px;
+    }
+    .map-help-close:hover { background: rgba(255,255,255,0.2); }
+    .map-help-body {
+      padding: 8px 10px;
+      color: var(--color-text);
+      line-height: 1.4;
+    }
+    .map-help-actions {
+      padding: 6px 10px 8px;
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .map-help-toggle {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(15,23,42,0.2);
+      z-index: 1000;
+      display: none;
+    }
+    .map-help-toggle.visible { display: block; }
   </style>
 </head>
 <body>
@@ -70,15 +134,24 @@
   <div class="map-container">
     <div id="map"></div>
 
-    <div class="map-controls">
-      <div style="font-weight:700;margin-bottom:0.5rem">📌 Instrucciones</div>
-      <div style="color:var(--color-text-muted);line-height:1.4">
-        <strong>Clic en el mapa</strong> para poner un chulito.<br>
-        Completa los datos en el formulario que aparece.<br>
-        <small>Tu chulito es visible inmediatamente.</small>
+    <!-- Panel de ayuda plegable (esquina superior derecha) -->
+    <div id="map-help-panel" class="map-help-panel">
+      <div class="map-help-header">
+        <span>📌 Ayuda</span>
+        <button class="map-help-close" onclick="closeHelp()" title="Cerrar">✕</button>
       </div>
-      <button class="btn btn-sm btn-outline mt-2" onclick="loadChulitos()">🔄 Actualizar</button>
+      <div class="map-help-body">
+        <strong>Clic en el mapa</strong> para poner un evento.<br>
+        Completa: nombre, teléfono y requerimiento.<br>
+        <small>Tu evento es visible al instante.</small>
+      </div>
+      <div class="map-help-actions">
+        <button class="btn btn-sm btn-outline" onclick="loadEventos()" style="font-size:0.75rem;padding:3px 8px">🔄 Actualizar</button>
+      </div>
     </div>
+
+    <!-- Botón flotante para reabrir el panel -->
+    <button id="map-help-toggle" class="map-help-toggle" onclick="openHelp()">📌 Ayuda</button>
 
     <div class="map-legend">
       <div style="font-weight:700;margin-bottom:4px">Leyenda</div>

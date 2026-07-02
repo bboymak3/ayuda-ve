@@ -51,7 +51,7 @@
         <select name="entidad_tipo" class="form-select" id="entidad-tipo">
           <option value="">Selecciona...</option>
           <option value="reporte">📝 Un reporte específico</option>
-          <option value="chulito">📍 Un chulito del mapa</option>
+          <option value="evento">📍 Un evento del mapa</option>
           <option value="perfil">👤 Un perfil/persona</option>
           <option value="url_externa">🔗 Una URL externa (Facebook, etc.)</option>
         </select>
@@ -145,7 +145,7 @@
     document.getElementById('entidad-tipo').addEventListener('change', (e) => {
       const v = e.target.value;
       document.getElementById('entidad-id-group').style.display =
-        ['reporte','chulito','perfil'].includes(v) ? '' : 'none';
+        ['reporte','evento','perfil'].includes(v) ? '' : 'none';
       document.getElementById('url-referencia-group').style.display =
         (v === 'url_externa') ? '' : 'none';
     });

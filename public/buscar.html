@@ -76,7 +76,7 @@
       const results = document.getElementById('search-results');
       const total = data.total;
       const reportes = data.resultados.reportes || [];
-      const chulitos = data.resultados.chulitos || [];
+      const eventos = data.resultados.eventos || [];
 
       if (total === 0) {
         results.innerHTML = `
@@ -96,9 +96,9 @@
         html += reportes.map(r => renderCard(r, 'reporte')).join('');
       }
 
-      if (chulitos.length > 0) {
-        html += `<h2 class="section-title mt-3">📍 Chulitos del mapa (${chulitos.length})</h2>`;
-        html += chulitos.map(c => renderCard(c, 'chulito')).join('');
+      if (eventos.length > 0) {
+        html += `<h2 class="section-title mt-3">📍 Eventos del mapa (${eventos.length})</h2>`;
+        html += eventos.map(c => renderCard(c, 'evento')).join('');
       }
 
       results.innerHTML = html;

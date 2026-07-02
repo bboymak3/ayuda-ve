@@ -46,8 +46,8 @@
 
           <div class="stat-grid">
             <div class="stat-card">
-              <div class="stat-value" style="color:#dc2626">${s.chulitos_criticos}</div>
-              <div class="stat-label">🔴 Chulitos críticos</div>
+              <div class="stat-value" style="color:#dc2626">${s.eventos_criticos}</div>
+              <div class="stat-label">🔴 Eventos críticos</div>
             </div>
             <div class="stat-card">
               <div class="stat-value" style="color:#f59e0b">${s.reportes_pendientes}</div>
@@ -63,7 +63,7 @@
         `;
 
         if (s.zonas_criticas.length > 0) {
-          html += '<div class="card"><table class="admin-table"><thead><tr><th>Zona</th><th>Chulitos críticos</th></tr></thead><tbody>';
+          html += '<div class="card"><table class="admin-table"><thead><tr><th>Zona</th><th>Eventos críticos</th></tr></thead><tbody>';
           s.zonas_criticas.forEach(z => {
             html += `<tr><td>${escapeHtml(z.zona)}</td><td><strong style="color:#dc2626">${z.total}</strong></td></tr>`;
           });

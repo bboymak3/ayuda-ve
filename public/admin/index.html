@@ -41,7 +41,7 @@
       <aside class="admin-sidebar">
         <a href="#" data-tab="dashboard" class="active">📊 Dashboard</a>
         <a href="#" data-tab="moderar">⏳ Moderar</a>
-        <a href="#" data-tab="chulitos">📍 Chulitos</a>
+        <a href="#" data-tab="eventos">📍 Eventos</a>
         <a href="#" data-tab="perfiles">👤 Perfiles</a>
         <a href="#" data-tab="abuso">🚩 Abusos</a>
         <a href="#" data-tab="carga-rapida">⚡ Carga rápida</a>
@@ -69,12 +69,12 @@
           <div id="moderar-list" class="loading-state">Cargando...</div>
         </div>
 
-        <div id="tab-chulitos" class="tab-content hidden">
-          <h2 class="section-title">📍 Gestión de chulitos</h2>
+        <div id="tab-eventos" class="tab-content hidden">
+          <h2 class="section-title">📍 Gestión de eventos</h2>
           <div class="flex gap-1 mb-2">
-            <input type="text" id="chulito-search" class="form-input" placeholder="Buscar chulitos..." oninput="searchChulitos()">
+            <input type="text" id="evento-search" class="form-input" placeholder="Buscar eventos..." oninput="searchEventos()">
           </div>
-          <div id="chulitos-list" class="loading-state">Cargando...</div>
+          <div id="eventos-list" class="loading-state">Cargando...</div>
         </div>
 
         <div id="tab-carga-rapida" class="tab-content hidden">
@@ -86,7 +86,7 @@
                 <label class="form-label">Tipo de entidad</label>
                 <select name="tipo_entidad" class="form-select" id="cr-tipo-entidad">
                   <option value="reporte">📝 Reporte</option>
-                  <option value="chulito">📍 Chulito en mapa</option>
+                  <option value="evento">📍 Evento en mapa</option>
                 </select>
               </div>
               <div class="form-group">
@@ -132,11 +132,11 @@
             </div>
             <div class="grid-2" id="cr-coords-group">
               <div class="form-group">
-                <label class="form-label">Latitud (solo chulito)</label>
+                <label class="form-label">Latitud (solo evento)</label>
                 <input name="lat" type="number" step="any" class="form-input" placeholder="10.4806">
               </div>
               <div class="form-group">
-                <label class="form-label">Longitud (solo chulito)</label>
+                <label class="form-label">Longitud (solo evento)</label>
                 <input name="lng" type="number" step="any" class="form-input" placeholder="-66.9036">
               </div>
             </div>
@@ -161,11 +161,53 @@
 
         <div id="tab-video" class="tab-content hidden">
           <h2 class="section-title">🎥 Procesar video con IA</h2>
-          <p class="section-subtitle">Sube un archivo de audio. El sistema lo transcribe con Whisper y genera un resumen con IA.</p>
-          <div class="alert alert-info">
-            ℹ️ Descarga el audio del video (puedes usar y2mate o similares) y súbelo aquí. Cloudflare Workers AI procesará el audio con Whisper y generará un resumen.
+          <p class="section-subtitle">Transcribe audio con Whisper y genera ficha + resumen automáticamente. Crea perfil reiterativo si detecta contacto.</p>
+
+          <!-- Selector de modo: URL o Archivo -->
+          <div class="flex gap-1 mb-2" style="background:#f1f5f9;padding:4px;border-radius:8px">
+            <button type="button" id="video-tab-url" class="btn btn-sm" style="flex:1;background:white;border:none" onclick="switchVideoMode('url')">🔗 Desde URL</button>
+            <button type="button" id="video-tab-file" class="btn btn-sm" style="flex:1;background:transparent;border:none" onclick="switchVideoMode('file')">📁 Subir archivo</button>
           </div>
-          <form onsubmit="procesarVideo(event); return false;">
+
+          <!-- Modo URL -->
+          <form id="form-video-url" onsubmit="procesarVideoUrl(event); return false;">
+            <div class="alert alert-info">
+              ℹ️ Pega la URL del video o audio (Facebook, Instagram, YouTube, etc.). El sistema intentará descargarlo automáticamente.
+            </div>
+            <div class="form-group">
+              <label class="form-label">URL del video o audio <span class="req">*</span></label>
+              <input name="url" type="url" class="form-input" required placeholder="https://www.facebook.com/.../videos/...">
+              <div class="form-help">
+                Plataformas soportadas: Facebook, Instagram, YouTube, TikTok, Twitter, WhatsApp (enlace directo).<br>
+                <strong>Importante:</strong> Algunas plataformas (Facebook, Instagram) bloquean descargas automáticas. Si falla, descarga el audio y usa el modo "Subir archivo".
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Asociar a reporte (opcional)</label>
+                <input name="reporte_id" type="number" class="form-input" placeholder="ID del reporte">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Asociar a evento de mapa (opcional)</label>
+                <input name="chulito_id" type="number" class="form-input" placeholder="ID del evento">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">¿Crear ficha automáticamente?</label>
+              <select name="crear_ficha" class="form-select">
+                <option value="true" selected>✅ Sí, crear ficha + perfil automáticamente</option>
+                <option value="false">⛔ No, solo transcribir</option>
+              </select>
+              <div class="form-help">Si seleccionas "Sí", se crea una ficha visible públicamente con la información detectada por la IA.</div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block">🎯 Procesar desde URL</button>
+          </form>
+
+          <!-- Modo Archivo -->
+          <form id="form-video-file" onsubmit="procesarVideo(event); return false;" style="display:none">
+            <div class="alert alert-info">
+              ℹ️ Sube un archivo de audio (mp3, wav, m4a). Si tienes un video de Facebook/Instagram, descarga primero el audio con y2mate o similares.
+            </div>
             <div class="form-group">
               <label class="form-label">Asociar a reporte (opcional)</label>
               <input name="reporte_id" type="number" class="form-input" placeholder="ID del reporte">
@@ -175,8 +217,16 @@
               <input name="file" type="file" accept="audio/*" required class="form-input">
               <div class="form-help">Formatos: mp3, wav, m4a, ogg. Máximo 25MB.</div>
             </div>
+            <div class="form-group">
+              <label class="form-label">¿Crear ficha automáticamente?</label>
+              <select name="crear_ficha" class="form-select">
+                <option value="true" selected>✅ Sí, crear ficha + perfil automáticamente</option>
+                <option value="false">⛔ No, solo transcribir</option>
+              </select>
+            </div>
             <button type="submit" class="btn btn-primary btn-lg btn-block">🎯 Transcribir y resumir</button>
           </form>
+
           <div id="video-result" class="mt-3"></div>
         </div>
 
@@ -240,7 +290,7 @@
               <input type="text" id="set-emergencia" class="form-input">
             </div>
             <div class="form-group">
-              <label class="form-label">Comentarios en chulitos</label>
+              <label class="form-label">Comentarios en eventos</label>
               <select id="set-comentarios" class="form-select">
                 <option value="true">✅ Habilitados</option>
                 <option value="false">⛔ Deshabilitados</option>

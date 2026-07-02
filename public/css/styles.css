@@ -366,7 +366,7 @@ a:hover { text-decoration: underline; }
 .urgencia-baja    { background: #f1f5f9; color: #475569; }
 
 /* ============================================================
-   Cards de reportes/chulitos
+   Cards de reportes/eventos
    ============================================================ */
 .card {
   background: var(--color-surface);
