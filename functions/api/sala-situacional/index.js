@@ -3,7 +3,7 @@
 // Datos para la sala situacional publica
 // ============================================================
 
-import { json } from '../../../lib/utils.js';
+import { json } from '../../lib/utils.js';
 
 export async function onRequestGet({ env }) {
   const criticos = await env.DB.prepare(

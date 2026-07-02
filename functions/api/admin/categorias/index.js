@@ -3,9 +3,9 @@
 // CRUD de sectores (solo admin)
 // ============================================================
 
-import { json, error, readJsonBody, sanitize, slugify } from '../../../../lib/utils.js';
-import { isAdmin } from '../../../../lib/auth.js';
-import { logAction } from '../../../../lib/db.js';
+import { json, error, readJsonBody, sanitize, slugify } from '../../../lib/utils.js';
+import { isAdmin } from '../../../lib/auth.js';
+import { logAction } from '../../../lib/db.js';
 
 // GET /api/admin/categorias - lista TODOS (incluye inactivos)
 export async function onRequestGet({ env, request }) {

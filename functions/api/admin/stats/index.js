@@ -3,8 +3,8 @@
 // Estadisticas para el dashboard del admin
 // ============================================================
 
-import { json, error } from '../../../../lib/utils.js';
-import { isAdmin } from '../../../../lib/auth.js';
+import { json, error } from '../../../lib/utils.js';
+import { isAdmin } from '../../../lib/auth.js';
 
 export async function onRequestGet({ env, request }) {
   if (!isAdmin(request, env)) return error('No autorizado', 401);

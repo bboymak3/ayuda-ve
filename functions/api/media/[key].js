@@ -3,7 +3,7 @@
 // Sirve archivos desde R2 (fotos y audios)
 // ============================================================
 
-import { error } from '../../../lib/utils.js';
+import { error } from '../../lib/utils.js';
 
 export async function onRequestGet({ env, params }) {
   if (!env.BUCKET) {

@@ -2,9 +2,9 @@
 // functions/api/reportes/index.js — GET/POST /api/reportes
 // ============================================================
 
-import { json, error, readJsonBody, sanitize, getClientIP } from '../../../lib/utils.js';
-import { parseReportes, REPORTE_FIELDS, incView, logAction } from '../../../lib/db.js';
-import { extractCategories, findMatches } from '../../../lib/match.js';
+import { json, error, readJsonBody, sanitize, getClientIP } from '../../lib/utils.js';
+import { parseReportes, REPORTE_FIELDS, incView, logAction } from '../../lib/db.js';
+import { extractCategories, findMatches } from '../../lib/match.js';
 
 // ----------------------------------------------------------
 // GET /api/reportes

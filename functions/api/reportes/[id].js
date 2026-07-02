@@ -2,9 +2,9 @@
 // functions/api/reportes/[id].js — GET/PUT/DELETE /api/reportes/[id]
 // ============================================================
 
-import { json, error, readJsonBody, sanitize } from '../../../lib/utils.js';
-import { isAdmin } from '../../../lib/auth.js';
-import { parseReporte, REPORTE_FIELDS, incView, logAction } from '../../../lib/db.js';
+import { json, error, readJsonBody, sanitize } from '../../lib/utils.js';
+import { isAdmin } from '../../lib/auth.js';
+import { parseReporte, REPORTE_FIELDS, incView, logAction } from '../../lib/db.js';
 
 export async function onRequestGet({ env, params }) {
   const id = parseInt(params.id, 10);

@@ -4,8 +4,8 @@
 // POST: crea un chulito nuevo (publico)
 // ============================================================
 
-import { json, error, readJsonBody, sanitize, getClientIP, allowedImageMimes } from '../../../lib/utils.js';
-import { extractCategories, findMatches } from '../../../lib/match.js';
+import { json, error, readJsonBody, sanitize, getClientIP, allowedImageMimes } from '../../lib/utils.js';
+import { extractCategories, findMatches } from '../../lib/match.js';
 
 // ----------------------------------------------------------
 // GET /api/chulitos

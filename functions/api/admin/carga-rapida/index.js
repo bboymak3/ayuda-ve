@@ -4,10 +4,10 @@
 // Se publica directamente como aprobado/verificado
 // ============================================================
 
-import { json, error, readJsonBody, sanitize } from '../../../../lib/utils.js';
-import { isAdmin } from '../../../../lib/auth.js';
-import { extractCategories } from '../../../../lib/match.js';
-import { logAction } from '../../../../lib/db.js';
+import { json, error, readJsonBody, sanitize } from '../../../lib/utils.js';
+import { isAdmin } from '../../../lib/auth.js';
+import { extractCategories } from '../../../lib/match.js';
+import { logAction } from '../../../lib/db.js';
 
 // POST /api/admin/carga-rapida
 // Body: {

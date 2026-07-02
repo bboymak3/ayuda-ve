@@ -6,8 +6,8 @@
 // DELETE: eliminar (admin)
 // ============================================================
 
-import { json, error, readJsonBody, sanitize, getClientIP } from '../../../lib/utils.js';
-import { isAdmin } from '../../../lib/auth.js';
+import { json, error, readJsonBody, sanitize, getClientIP } from '../../lib/utils.js';
+import { isAdmin } from '../../lib/auth.js';
 
 // ----------------------------------------------------------
 // GET /api/chulitos/[id]

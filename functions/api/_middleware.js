@@ -2,7 +2,7 @@
 // functions/api/_middleware.js — CORS + manejo de errores global
 // ============================================================
 
-import { corsHeaders, error, handleOptions } from '../../lib/utils.js';
+import { corsHeaders, error, handleOptions } from '../lib/utils.js';
 
 export async function onRequest(context) {
   const { request } = context;

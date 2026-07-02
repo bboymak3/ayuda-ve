@@ -3,10 +3,10 @@
 // Recibe URL o archivo de audio/video, lo transcribe y resume
 // ============================================================
 
-import { json, error, readJsonBody } from '../../../lib/utils.js';
-import { isAdmin } from '../../../lib/auth.js';
-import { transcribeAudio, generateSummary, downloadMedia } from '../../../lib/ai.js';
-import { logAction } from '../../../lib/db.js';
+import { json, error, readJsonBody } from '../../lib/utils.js';
+import { isAdmin } from '../../lib/auth.js';
+import { transcribeAudio, generateSummary, downloadMedia } from '../../lib/ai.js';
+import { logAction } from '../../lib/db.js';
 
 // POST /api/transcribe
 // Opcion 1: Body JSON { url: "https://...", reporte_id?: 123 }

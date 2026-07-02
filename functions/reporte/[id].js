@@ -2,7 +2,7 @@
 // functions/reporte/[id].js — Ficha pública de reporte
 // ============================================================
 
-import { parseReporte, REPORTE_FIELDS } from '../../lib/db.js';
+import { parseReporte, REPORTE_FIELDS } from '../lib/db.js';
 
 export async function onRequestGet({ env, params }) {
   const id = parseInt(params.id, 10);

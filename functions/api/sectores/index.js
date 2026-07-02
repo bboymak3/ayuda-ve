@@ -3,7 +3,7 @@
 // Lista todos los sectores activos
 // ============================================================
 
-import { json, error, requireMethod } from '../../../lib/utils.js';
+import { json, error, requireMethod } from '../../lib/utils.js';
 
 export async function onRequestGet({ env }) {
   const result = await env.DB.prepare(

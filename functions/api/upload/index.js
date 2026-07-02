@@ -3,7 +3,7 @@
 // Sube archivos a R2 (fotos, audios)
 // ============================================================
 
-import { json, error, getClientIP, shortId, allowedImageMimes, allowedAudioMimes } from '../../../lib/utils.js';
+import { json, error, getClientIP, shortId, allowedImageMimes, allowedAudioMimes } from '../../lib/utils.js';
 
 // POST /api/upload
 // FormData con campo "file" (max 25MB por defecto en Cloudflare)

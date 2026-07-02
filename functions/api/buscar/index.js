@@ -3,8 +3,8 @@
 // Busqueda global: reportes + chulitos (SIN personas)
 // ============================================================
 
-import { json } from '../../../lib/utils.js';
-import { parseReportes, REPORTE_FIELDS } from '../../../lib/db.js';
+import { json } from '../../lib/utils.js';
+import { parseReportes, REPORTE_FIELDS } from '../../lib/db.js';
 
 // GET /api/buscar?q=antibioticos+caracas&limit=20
 export async function onRequestGet({ env, request }) {

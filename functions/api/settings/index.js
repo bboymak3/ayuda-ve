@@ -3,8 +3,8 @@
 // Configuracion global del sitio (publico GET, admin PUT)
 // ============================================================
 
-import { json, error, readJsonBody } from '../../../lib/utils.js';
-import { isAdmin } from '../../../lib/auth.js';
+import { json, error, readJsonBody } from '../../lib/utils.js';
+import { isAdmin } from '../../lib/auth.js';
 
 // GET /api/settings — publico (solo claves publicas)
 export async function onRequestGet({ env }) {
