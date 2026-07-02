@@ -31,16 +31,23 @@ export async function findOrCreatePerfil(info, db, source = 'auto') {
   // Estrategia 2: nombre + ubicación
   if (!perfil && nombre) {
     const nombreNormalizado = normalizeName(nombre);
-    perfil = await db.prepare(
-      `SELECT * FROM perfiles
-       WHERE LOWER(nombre) LIKE ?
-       ${ubicacion ? 'AND (ubicacion LIKE ? OR ? = "")' : ''}
-       LIMIT 1`
-    ).bind(
-      `%${nombreNormalizado}%`,
-      ubicacion ? `%${ubicacion}%` : '',
-      ubicacion || ''
-    ).first();
+    if (ubicacion) {
+      perfil = await db.prepare(
+        `SELECT * FROM perfiles
+         WHERE LOWER(nombre) LIKE ?
+         AND ubicacion LIKE ?
+         LIMIT 1`
+      ).bind(
+        `%${nombreNormalizado}%`,
+        `%${ubicacion}%`
+      ).first();
+    } else {
+      perfil = await db.prepare(
+        `SELECT * FROM perfiles
+         WHERE LOWER(nombre) LIKE ?
+         LIMIT 1`
+      ).bind(`%${nombreNormalizado}%`).first();
+    }
     if (perfil) matchStrategy = 'auto_nombre_ubicacion';
   }
 

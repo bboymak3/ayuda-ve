@@ -14,6 +14,23 @@ export async function transcribeAudio(audioBuffer, env) {
     throw new Error('Workers AI no configurado. Falta binding AI.');
   }
 
+  // Validar que el buffer no esté vacío
+  if (!audioBuffer || audioBuffer.byteLength === 0) {
+    throw new Error('El buffer de audio está vacío. El archivo descargado no contiene audio válido.');
+  }
+
+  // Validar tamaño mínimo (un audio real pesa al menos algunos KB)
+  if (audioBuffer.byteLength < 1000) {
+    throw new Error('El archivo es demasiado pequeño para ser audio válido (< 1KB). Probablemente se descargó una página HTML o un error, no el audio real.');
+  }
+
+  // Detectar si el contenido es HTML (página web en vez de audio)
+  const headerBytes = new Uint8Array(audioBuffer.slice(0, 50));
+  const headerStr = String.fromCharCode(...headerBytes).toLowerCase();
+  if (headerStr.includes('<!doctype') || headerStr.includes('<html') || headerStr.includes('<?xml')) {
+    throw new Error('El contenido descargado es una página HTML, no un archivo de audio. Las plataformas como Facebook/Instagram/YouTube bloquean la descarga directa de videos. Descarga el audio manualmente (con y2mate o similar) y súbelo como archivo.');
+  }
+
   try {
     // @cf/openai/whisper — modelo de transcripcion de OpenAI en CF Workers AI
     const response = await env.AI.run('@cf/openai/whisper', {
@@ -23,7 +40,7 @@ export async function transcribeAudio(audioBuffer, env) {
     if (response && response.text) {
       return response.text;
     }
-    throw new Error('Respuesta vacia de Whisper');
+    throw new Error('Respuesta vacía de Whisper. El audio podría estar corrupto o en un formato no soportado.');
   } catch (e) {
     console.error('Error en transcripcion Whisper:', e);
     throw new Error(`Error transcribiendo audio: ${e.message}`);
@@ -106,11 +123,21 @@ export async function downloadMedia(url, env) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      throw new Error(`HTTP ${response.status} - ${response.statusText}`);
     }
 
     const contentType = response.headers.get('Content-Type') || '';
     const buffer = await response.arrayBuffer();
+
+    // Detectar si la respuesta es HTML (página de login/redirección de Facebook, etc.)
+    const ctLower = contentType.toLowerCase();
+    if (ctLower.includes('text/html') || ctLower.includes('application/json')) {
+      throw new Error(
+        `La URL devolvió ${ctLower.split(';')[0]} (no es audio/video). ` +
+        `Las plataformas como Facebook, Instagram y YouTube NO permiten descarga directa de videos. ` +
+        `Solución: descarga el audio del video (con y2mate.com u otra herramienta) y súbelo como archivo.`
+      );
+    }
 
     return {
       buffer,

@@ -4,8 +4,13 @@
 # ============================================================
 
 name = "ayuda-ve"
-compatibility_date = "2025-01-15"
+compatibility_date = "2025-10-08"
 pages_build_output_dir = "public"
+compatibility_flags = ["nodejs_compat"]
+
+# Observabilidad (logs en Cloudflare dashboard)
+[observability]
+enabled = true
 
 # ============================================================
 # Bindings (recursos de Cloudflare que usará la app)
@@ -30,15 +35,14 @@ binding = "AI"
 # Variables de entorno (NO secretas - visibles en el repo)
 # ============================================================
 [vars]
-SITE_URL = "https://ayuda-ve.pages.dev"   # Cambiar por tu dominio real
+SITE_URL = "https://ayuda-ve.pages.dev"
 SITE_NAME = "Ayuda VE"
-SITE_DESC = "Plataforma de ayuda mutua para Venezuela"
-CONTACT_EMAIL = "tu-correo@ejemplo.com"
+SITE_DESC = "Plataforma de donaciones y ayuda mutua para Venezuela"
+CONTACT_EMAIL = "bboymak3@gmail.com"
 
 # ============================================================
 # SECRETS (configurar por CLI, NO poner aquí):
-#   wrangler pages secret put ADMIN_TOKEN
-#   wrangler pages secret put UPLOAD_RATE_LIMIT_KEY
+#   wrangler pages secret put ADMIN_TOKEN --project-name=ayuda-ve
 #
-# ADMIN_TOKEN: token largo y aleatorio que tú usarás para entrar al panel admin
+# ADMIN_TOKEN: token largo y aleatorio para el panel admin
 # ============================================================
