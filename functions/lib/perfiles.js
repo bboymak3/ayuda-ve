@@ -31,24 +31,38 @@ export async function findOrCreatePerfil(info, db, source = 'auto') {
   // Estrategia 2: nombre + ubicación
   if (!perfil && nombre) {
     const nombreNormalizado = normalizeName(nombre);
-    if (ubicacion) {
-      perfil = await db.prepare(
-        `SELECT * FROM perfiles
-         WHERE LOWER(nombre) LIKE ?
-         AND ubicacion LIKE ?
-         LIMIT 1`
-      ).bind(
-        `%${nombreNormalizado}%`,
-        `%${ubicacion}%`
-      ).first();
-    } else {
-      perfil = await db.prepare(
-        `SELECT * FROM perfiles
-         WHERE LOWER(nombre) LIKE ?
-         LIMIT 1`
-      ).bind(`%${nombreNormalizado}%`).first();
+    // Buscar todos los perfiles y filtrar en JS (porque SQLite LOWER no quita acentos)
+    const allPerfiles = await db.prepare(
+      `SELECT * FROM perfiles LIMIT 1000`
+    ).all();
+
+    for (const p of allPerfiles.results) {
+      const nombreBD = normalizeName(p.nombre || '');
+      // Coincidencia si los nombres normalizados comparten al menos las 2 primeras palabras
+      // o si uno contiene al otro
+      const words1 = nombreNormalizado.split(' ').filter(w => w.length > 2);
+      const words2 = nombreBD.split(' ').filter(w => w.length > 2);
+      const overlap = words1.filter(w => words2.includes(w)).length;
+      const matchNombre = overlap >= Math.min(2, words1.length, words2.length);
+
+      if (matchNombre) {
+        // Si hay ubicacion, validar también
+        if (ubicacion && p.ubicacion) {
+          const ubBD = normalizeName(p.ubicacion);
+          const ubNew = normalizeName(ubicacion);
+          if (ubBD.includes(ubNew) || ubNew.includes(ubBD)) {
+            perfil = p;
+            matchStrategy = 'auto_nombre_ubicacion';
+            break;
+          }
+        } else {
+          // Sin ubicacion, solo matching por nombre
+          perfil = p;
+          matchStrategy = 'auto_nombre_ubicacion';
+          break;
+        }
+      }
     }
-    if (perfil) matchStrategy = 'auto_nombre_ubicacion';
   }
 
   // Estrategia 3: red social
