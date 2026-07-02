@@ -50,6 +50,11 @@ export async function onRequestPost({ env, request }) {
     sectorId = body.sector_id || null;
     plataformaInfo = detectarPlataforma(body.url);
 
+    // Validar que reporte_id y chulito_id existan antes de insertar (evitar FK constraint)
+    const validatedIds = await validateForeignKeys(env.DB, reporteId, chulitoId);
+    reporteId = validatedIds.reporteId;
+    chulitoId = validatedIds.chulitoId;
+
     // Guardar registro en BD
     const insertResult = await env.DB.prepare(
       `INSERT INTO videos_procesados
@@ -304,4 +309,37 @@ function detectarPlataforma(url) {
   if (u.includes('tiktok')) return 'tiktok';
   if (u.includes('twitter') || u.includes('x.com')) return 'twitter';
   return 'otro';
+}
+
+// ----------------------------------------------------------
+// Validar que reporte_id y chulito_id existan antes de usarlos
+// como foreign keys. Si no existen o son inválidos, devolver null.
+// Esto evita el error: FOREIGN KEY constraint failed
+// ----------------------------------------------------------
+async function validateForeignKeys(db, reporteId, chulitoId) {
+  const result = { reporteId: null, chulitoId: null };
+
+  // Validar reporte_id
+  if (reporteId && !isNaN(parseInt(reporteId, 10)) && parseInt(reporteId, 10) > 0) {
+    const id = parseInt(reporteId, 10);
+    try {
+      const r = await db.prepare(`SELECT id FROM reportes WHERE id = ?`).bind(id).first();
+      if (r) result.reporteId = id;
+    } catch (e) {
+      console.error('Error validando reporte_id:', e);
+    }
+  }
+
+  // Validar chulito_id
+  if (chulitoId && !isNaN(parseInt(chulitoId, 10)) && parseInt(chulitoId, 10) > 0) {
+    const id = parseInt(chulitoId, 10);
+    try {
+      const c = await db.prepare(`SELECT id FROM chulitos WHERE id = ?`).bind(id).first();
+      if (c) result.chulitoId = id;
+    } catch (e) {
+      console.error('Error validando chulito_id:', e);
+    }
+  }
+
+  return result;
 }
