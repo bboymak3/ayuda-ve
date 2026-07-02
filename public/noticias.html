@@ -3,8 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Últimas Noticias — Ayuda VE</title>
-  <meta name="description" content="Todas las publicaciones recientes: necesidades, disponibles e información útil. Actualizado en tiempo real.">
+  <title>Últimas Noticias de Ayuda en Venezuela — Ayuda VE</title>
+  <meta name="description" content="Noticias actualizadas de ayuda humanitaria en Venezuela tras el terremoto: solicitudes de medicinas, alimentos, agua, ropa, transporte, voluntarios. Centros de acopio, reposts de Facebook, ofertas de donación e información útil. Conecta donantes con quienes necesitan ayuda en Caracas, Miranda, Vargas, Carabobo y todo el país.">
+  <meta name="keywords" content="noticias venezuela, ayuda venezuela, terremoto venezuela, donaciones venezuela, noticias ayuda humanitaria, centros de acopio venezuela, solicitudes ayuda venezuela, ofertas donacion venezuela">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+  <link rel="canonical" href="https://ayuda-ve.pages.dev/noticias">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Últimas Noticias de Ayuda en Venezuela — Ayuda VE">
+  <meta property="og:description" content="Noticias actualizadas de ayuda humanitaria en Venezuela: solicitudes, donaciones, centros de acopio, reposts de Facebook.">
+  <meta property="og:url" content="https://ayuda-ve.pages.dev/noticias">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
 </head>
@@ -31,17 +38,20 @@
     <h1 class="section-title" data-i18n="noticias.title">📰 Últimas Noticias</h1>
     <p class="section-subtitle" data-i18n="noticias.sub">Todas las publicaciones recientes: necesidades, disponibles e información útil. Actualizado en tiempo real.</p>
 
-    <div class="flex gap-1 mb-2" style="flex-wrap:wrap">
+    <div class="flex gap-1 mb-2" style="flex-wrap:wrap;align-items:center">
       <button class="btn btn-sm btn-outline" data-tipo="" onclick="filtrar('')">📋 Todas</button>
       <button class="btn btn-sm btn-outline" data-tipo="solicitud" onclick="filtrar('solicitud')">🆘 Necesitan</button>
       <button class="btn btn-sm btn-outline" data-tipo="disponible" onclick="filtrar('disponible')">💚 Disponibles</button>
       <button class="btn btn-sm btn-outline" data-tipo="informacion" onclick="filtrar('informacion')">ℹ️ Info</button>
       <button class="btn btn-sm btn-primary" onclick="loadNoticias()">🔄 Actualizar</button>
+      <span id="total-counter" class="text-sm text-muted" style="margin-left:auto"></span>
     </div>
 
     <div id="noticias-list" class="loading-state">Cargando...</div>
 
-    <div class="text-center mt-3">
+    <!-- Paginación numérica + botón cargar más -->
+    <div class="text-center mt-3" id="pagination-wrap" style="display:none">
+      <div id="pagination-numbers" class="flex gap-1" style="justify-content:center;flex-wrap:wrap;margin-bottom:12px"></div>
       <button id="load-more" class="btn btn-outline" onclick="loadMore()" style="display:none">Cargar más →</button>
     </div>
   </div>
@@ -51,6 +61,9 @@
   <script>
     let currentOffset = 0;
     let currentTipo = '';
+    let currentPage = 1;
+    let totalNoticias = 0;
+    let totalPaginas = 1;
     const PAGE_SIZE = 20;
 
     async function loadNoticias(append = false) {
@@ -58,6 +71,7 @@
       if (!append) {
         list.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div> Cargando...</div>';
         currentOffset = 0;
+        currentPage = 1;
       }
 
       try {
@@ -65,6 +79,19 @@
         if (currentTipo) url += `&tipo=${currentTipo}`;
 
         const data = await api(url);
+
+        // Actualizar contadores
+        totalNoticias = data.total || 0;
+        totalPaginas = data.total_paginas || 1;
+        currentPage = data.pagina_actual || 1;
+
+        // Mostrar contador total
+        const counter = document.getElementById('total-counter');
+        if (totalNoticias > 0) {
+          counter.innerHTML = `<strong>${totalNoticias}</strong> noticia(s) publicada(s) · Página ${currentPage} de ${totalPaginas}`;
+        } else {
+          counter.innerHTML = '';
+        }
 
         if (!append) {
           if (data.publicaciones.length === 0) {
@@ -75,7 +102,7 @@
                 <a href="/reportar.html" class="btn btn-primary">➕ Publicar</a>
               </div>
             `;
-            document.getElementById('load-more').style.display = 'none';
+            document.getElementById('pagination-wrap').style.display = 'none';
             return;
           }
           list.innerHTML = data.publicaciones.map(renderNoticia).join('');
@@ -83,13 +110,67 @@
           list.innerHTML += data.publicaciones.map(renderNoticia).join('');
         }
 
-        // Mostrar botón "cargar más" si hay más resultados
-        document.getElementById('load-more').style.display =
-          data.publicaciones.length === PAGE_SIZE ? '' : 'none';
+        // Mostrar paginación
+        renderPagination();
 
       } catch (e) {
         list.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
       }
+    }
+
+    // Renderizar paginación numérica
+    function renderPagination() {
+      const wrap = document.getElementById('pagination-wrap');
+      const numbers = document.getElementById('pagination-numbers');
+      const loadMore = document.getElementById('load-more');
+
+      if (totalPaginas <= 1) {
+        wrap.style.display = 'none';
+        return;
+      }
+
+      wrap.style.display = '';
+      numbers.innerHTML = '';
+
+      // Botón "Anterior"
+      if (currentPage > 1) {
+        numbers.innerHTML += `<button class="btn btn-sm btn-outline" onclick="goToPage(${currentPage - 1})">← Anterior</button>`;
+      }
+
+      // Números de página (mostrar máximo 7 páginas alrededor de la actual)
+      const startPage = Math.max(1, currentPage - 3);
+      const endPage = Math.min(totalPaginas, currentPage + 3);
+
+      if (startPage > 1) {
+        numbers.innerHTML += `<button class="btn btn-sm btn-outline" onclick="goToPage(1)">1</button>`;
+        if (startPage > 2) numbers.innerHTML += `<span style="padding:4px 8px">...</span>`;
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        const isCurrent = i === currentPage;
+        numbers.innerHTML += `<button class="btn btn-sm ${isCurrent ? 'btn-primary' : 'btn-outline'}" onclick="goToPage(${i})" ${isCurrent ? 'disabled' : ''}>${i}</button>`;
+      }
+
+      if (endPage < totalPaginas) {
+        if (endPage < totalPaginas - 1) numbers.innerHTML += `<span style="padding:4px 8px">...</span>`;
+        numbers.innerHTML += `<button class="btn btn-sm btn-outline" onclick="goToPage(${totalPaginas})">${totalPaginas}</button>`;
+      }
+
+      // Botón "Siguiente"
+      if (currentPage < totalPaginas) {
+        numbers.innerHTML += `<button class="btn btn-sm btn-outline" onclick="goToPage(${currentPage + 1})">Siguiente →</button>`;
+      }
+
+      // Botón "Cargar más" (alternativa)
+      loadMore.style.display = currentPage < totalPaginas ? '' : 'none';
+    }
+
+    // Ir a página específica
+    function goToPage(page) {
+      currentPage = page;
+      currentOffset = (page - 1) * PAGE_SIZE;
+      loadNoticias(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function renderNoticia(p) {

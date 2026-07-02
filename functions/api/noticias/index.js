@@ -60,7 +60,25 @@ export async function onRequestGet({ env, request }) {
   const reportesPromise = env.DB.prepare(reportesSql + ` ORDER BY r.created_at DESC LIMIT ? OFFSET ?`)
     .bind(...reportesBinds, limit, offset).all().catch(() => ({ results: [] }));
 
-  const [eventos, reportes] = await Promise.all([eventosPromise, reportesPromise]);
+  // Conteos totales (sin LIMIT/OFFSET) para paginación
+  let eventosCountSql = `SELECT COUNT(*) as total FROM chulitos WHERE estado IN ('activo','resuelto')`;
+  const evCountBinds = [];
+  if (tipo) { eventosCountSql += ` AND tipo = ?`; evCountBinds.push(tipo); }
+
+  let reportesCountSql = `SELECT COUNT(*) as total FROM reportes WHERE estado = 'aprobado'`;
+  const repCountBinds = [];
+  if (tipo) { reportesCountSql += ` AND tipo = ?`; repCountBinds.push(tipo); }
+
+  const [eventos, reportes, evCount, repCount] = await Promise.all([
+    eventosPromise,
+    reportesPromise,
+    env.DB.prepare(eventosCountSql).bind(...evCountBinds).first().catch(() => ({ total: 0 })),
+    env.DB.prepare(reportesCountSql).bind(...repCountBinds).first().catch(() => ({ total: 0 })),
+  ]);
+
+  const totalEventos = evCount?.total || 0;
+  const totalReportes = repCount?.total || 0;
+  const totalGlobal = totalEventos + totalReportes;
 
   // Combinar y ordenar por fecha
   const todas = [
@@ -80,6 +98,11 @@ export async function onRequestGet({ env, request }) {
   return json({
     ok: true,
     count: todas.length,
+    total: totalGlobal,
+    total_eventos: totalEventos,
+    total_reportes: totalReportes,
+    pagina_actual: Math.floor(offset / limit) + 1,
+    total_paginas: Math.ceil(totalGlobal / limit),
     publicaciones: todas,
   });
 }
