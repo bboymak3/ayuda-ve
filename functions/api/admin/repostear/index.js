@@ -28,18 +28,40 @@ export async function onRequestPost({ env, request }) {
 
   const body = await readJsonBody(request);
 
+  // Si el frontend mandó fb_url pero no embed_html, construirlo en el backend
+  if (body.fb_url && (!body.embed_html || !body.embed_html.startsWith('<iframe'))) {
+    const fbUrl = String(body.fb_url).trim();
+    if (fbUrl.includes('facebook.com') || fbUrl.includes('fb.com') || fbUrl.includes('fb.watch')) {
+      const encoded = encodeURIComponent(fbUrl);
+      body.embed_html = `<iframe src="https://www.facebook.com/plugins/post.php?href=${encoded}&show_text=true&width=500" width="500" height="712" style="border:none;overflow:hidden;max-width:100%" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>`;
+      if (!body.url_origen) body.url_origen = fbUrl;
+    }
+  }
+
   // Validaciones básicas - solo título es obligatorio (la descripción se auto-genera)
   let titulo = (body.titulo || '').trim();
   let descripcion = (body.descripcion || '').trim();
 
   // Si es FB embed y no hay título, auto-generar de la URL
   if (!titulo && body.tipo_contenido === 'facebook_embed' && body.url_origen) {
-    const m = String(body.url_origen).match(/facebook\.com\/([^\/]+)\/posts/i);
+    const urlStr = String(body.url_origen);
+    let m = urlStr.match(/facebook\.com\/share\/(?:p|v|post)\/([^\/\?]+)/i);
     if (m) {
-      const usuario = m[1].replace(/[._-]/g, ' ');
-      titulo = `Post de ${usuario} (Facebook)`;
+      titulo = `Post de Facebook (${m[1]})`;
     } else {
-      titulo = 'Post de Facebook';
+      m = urlStr.match(/facebook\.com\/([^\/]+)\/posts\/([^\/\?]+)/i);
+      if (m) {
+        const usuario = m[1].replace(/[._-]/g, ' ');
+        titulo = `Post de ${usuario} (Facebook)`;
+      } else {
+        m = urlStr.match(/facebook\.com\/([^\/]+)\/videos\/([^\/\?]+)/i);
+        if (m) {
+          const usuario = m[1].replace(/[._-]/g, ' ');
+          titulo = `Video de ${usuario} (Facebook)`;
+        } else {
+          titulo = 'Post de Facebook';
+        }
+      }
     }
   }
 
@@ -69,9 +91,16 @@ export async function onRequestPost({ env, request }) {
   // Si es imagen_url pero no proporcionaron imagen_url, usar url_origen
   const fotoUrlFinal = imagenUrl || (tipoFuente === 'imagen_url' ? urlOrigen : null);
 
-  // Si es facebook_embed pero no proporcionaron embed_html, error
-  if (tipoFuente === 'facebook_embed' && !embedHtml) {
-    return error('Para Facebook embed debes pegar el código iframe completo', 422);
+  // Si es facebook_embed, exigir al menos URL de origen (el embed se genera arriba)
+  if (tipoFuente === 'facebook_embed' && !embedHtml && !urlOrigen) {
+    return error('Para Facebook embed debes proporcionar la URL del post', 422);
+  }
+
+  // Si es facebook_embed con URL pero sin embedHtml, generar embed de la URL
+  let embedHtmlFinal = embedHtml;
+  if (tipoFuente === 'facebook_embed' && !embedHtmlFinal && urlOrigen) {
+    const encoded = encodeURIComponent(String(urlOrigen));
+    embedHtmlFinal = `<iframe src="https://www.facebook.com/plugins/post.php?href=${encoded}&show_text=true&width=500" width="500" height="712" style="border:none;overflow:hidden;max-width:100%" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>`;
   }
 
   // Extraer categorías automáticamente (usar titulo/descripcion ya procesados)
@@ -114,7 +143,7 @@ export async function onRequestPost({ env, request }) {
     urlOrigen,  // fuente_url
     detectarPlataforma(urlOrigen),
     categorias.length ? JSON.stringify(categorias) : null,
-    embedHtml,
+    embedHtmlFinal,
     tipoFuente,
   ).run();
 
@@ -141,7 +170,7 @@ export async function onRequestPost({ env, request }) {
       parseFloat(body.lng),
       urgencia,
       fotoUrlFinal,
-      embedHtml,
+      embedHtmlFinal,
       tipoFuente,
       urlOrigen,
     ).run();
