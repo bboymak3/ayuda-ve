@@ -126,7 +126,7 @@ function renderCard(item, type = 'reporte') {
 
   const link = type === 'reporte'
     ? `/reporte/${item.id}`
-    : `/chulito/${item.id}`;
+    : `/evento/${item.id}`;
 
   const ubicacion = item.ubicacion_texto ||
     [item.ubicacion_ciudad, item.ubicacion_estado].filter(Boolean).join(', ') ||

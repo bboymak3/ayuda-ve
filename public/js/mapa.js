@@ -129,7 +129,7 @@ function buildPopup(c) {
       <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:8px">🕒 ${fecha}</div>
       <div style="display:flex;gap:4px;flex-wrap:wrap">
         ${c.estado !== 'resuelto' ? `<button onclick="markResolved(${c.id})" class="btn btn-sm btn-success">✓ Marcar resuelto</button>` : ''}
-        <a href="/chulito/${c.id}" class="btn btn-sm btn-outline">Ver ficha →</a>
+        <a href="/evento/${c.id}" class="btn btn-sm btn-outline">Ver ficha →</a>
       </div>
     </div>
   `;

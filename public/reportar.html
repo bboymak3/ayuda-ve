@@ -289,8 +289,8 @@
     }
 
     function showSuccess(data, tipo) {
-      // Mapear tipo visible al endpoint real de la URL
-      const urlTipo = tipo === 'evento' ? 'chulito' : tipo;
+      // El tipo 'evento' es la URL pública, 'reporte' también
+      const urlTipo = tipo;
       const resultado = document.getElementById('resultado');
       let html = `
         <div class="alert alert-success">

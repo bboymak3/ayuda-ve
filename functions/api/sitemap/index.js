@@ -36,7 +36,7 @@ export async function onRequestGet({ env, request }) {
 
   // Chulitos
   for (const c of chulitos.results) {
-    xml += `  <url>\n    <loc>${baseUrl}/chulito/${c.id}</loc>\n    <lastmod>${c.updated_at}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+    xml += `  <url>\n    <loc>${baseUrl}/evento/${c.id}</loc>\n    <lastmod>${c.updated_at}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
   }
 
   // Reportes

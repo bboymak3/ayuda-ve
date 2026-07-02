@@ -234,7 +234,7 @@ async function loadModerar() {
           <div class="card-actions">
             <button onclick="moderar('resolver','chulito',${c.id})" class="btn btn-sm btn-success">✓ Resolver</button>
             <button onclick="moderar('eliminar','chulito',${c.id})" class="btn btn-sm btn-danger">🗑 Eliminar</button>
-            <a href="/chulito/${c.id}" target="_blank" class="btn btn-sm btn-outline">Ver ficha →</a>
+            <a href="/evento/${c.id}" target="_blank" class="btn btn-sm btn-outline">Ver ficha →</a>
           </div>
         </div>
       `).join('');
@@ -312,7 +312,7 @@ function renderEventosAdmin(eventos) {
             <td>
               <button onclick="moderar('resolver','chulito',${c.id})" class="btn btn-sm btn-success">✓</button>
               <button onclick="moderar('eliminar','chulito',${c.id})" class="btn btn-sm btn-danger">🗑</button>
-              <a href="/chulito/${c.id}" target="_blank" class="btn btn-sm btn-outline">→</a>
+              <a href="/evento/${c.id}" target="_blank" class="btn btn-sm btn-outline">→</a>
             </td>
           </tr>
         `).join('')}
@@ -357,7 +357,7 @@ async function cargaRapida(event) {
     if (data.tipo === 'reporte') {
       window.open(`/reporte/${data.id}`, '_blank');
     } else {
-      window.open(`/chulito/${data.id}`, '_blank');
+      window.open(`/evento/${data.id}`, '_blank');
     }
   } catch (e) {
     showToast('❌ ' + e.message, 'error');
