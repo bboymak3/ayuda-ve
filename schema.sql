@@ -22,14 +22,14 @@ CREATE TABLE IF NOT EXISTS sectores (
 
 -- ----------------------------------------------------------
 -- Tabla: reportes
--- Cada petición de ayuda, oferta de donación, o información
+-- Cada petición de ayuda, disponible de donación, o información
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS reportes (
   id                  INTEGER PRIMARY KEY AUTOINCREMENT,
   sector_id           INTEGER NOT NULL,
   tipo                TEXT NOT NULL DEFAULT 'solicitud',
                         -- 'solicitud' (necesitan ayuda)
-                        -- 'oferta' (tienen para donar)
+                        -- 'disponible' (tienen para donar)
                         -- 'informacion' (info útil: cuadrilla, hospital activo, etc.)
 
   titulo              TEXT NOT NULL,

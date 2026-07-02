@@ -11,7 +11,7 @@ export async function onRequestGet({ env, request }) {
   const url = new URL(request.url);
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 200);
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
-  const tipo = url.searchParams.get('tipo'); // 'solicitud' | 'oferta' | 'informacion'
+  const tipo = url.searchParams.get('tipo'); // 'solicitud' | 'disponible' | 'informacion'
 
   // Traer eventos del mapa
   let eventosSql = `

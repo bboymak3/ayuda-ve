@@ -115,7 +115,7 @@ function renderHTML(c) {
 
     <div class="ficha-section">
       <a href="/mapa.html" class="btn btn-outline">🗺️ Ver en mapa</a>
-      <a href="/reportar.html" class="btn btn-primary">➕ Publicar oferta de donación</a>
+      <a href="/reportar.html" class="btn btn-primary">➕ Publicar disponible de donación</a>
     </div>
 
     <div class="card mt-3" style="background:#fef3c7;border:1px solid #fcd34d">

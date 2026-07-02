@@ -25,7 +25,7 @@ export async function onRequestGet({ env, params }) {
 function renderFichaHTML(c) {
   const tipoLabel = {
     'solicitud': '🆘 NECESITA AYUDA',
-    'oferta': '💚 OFRECE AYUDA',
+    'disponible': '💚 DISPONIBLE PARA DONAR',
     'informacion': 'ℹ️ INFORMACIÓN ÚTIL',
   }[c.tipo] || c.tipo;
 
@@ -40,7 +40,7 @@ function renderFichaHTML(c) {
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": c.tipo === 'oferta' ? 'Offer' : 'Demand',
+    "@type": c.tipo === 'disponible' ? 'Offer' : 'Demand',
     "name": titulo,
     "description": c.requerimiento,
     "category": c.categoria || 'ayuda',

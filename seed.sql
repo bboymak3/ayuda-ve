@@ -9,7 +9,7 @@ INSERT INTO sectores (slug, nombre, descripcion, icono, color, orden) VALUES
    '💊', '#DC2626', 1),
 
   ('alimentos',     'Alimentos y Agua',
-   'Comida, agua potable, leche, fórmula para bebés, cocina comunitaria. Tanto solicitudes como ofertas de donación.',
+   'Comida, agua potable, leche, fórmula para bebés, cocina comunitaria. Tanto solicitudes como disponibles de donación.',
    '🍲', '#F59E0B', 2),
 
   ('vivienda',      'Vivienda y Materiales',

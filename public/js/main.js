@@ -120,7 +120,7 @@ function renderCard(item, type = 'reporte') {
 
   const tipoLabel = {
     'solicitud': '🆘 NECESITA',
-    'oferta': '💚 OFRECE',
+    'disponible': '💚 DISPONIBLE',
     'informacion': 'ℹ️ INFO',
   }[tipo] || tipo;
 

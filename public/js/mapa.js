@@ -132,7 +132,7 @@ function getMarkerColor(c) {
   if (c.estado === 'resuelto') return '#10b981';
   if (c.urgencia === 'critica') return '#dc2626';
   if (c.urgencia === 'alta') return '#f59e0b';
-  if (c.tipo === 'oferta') return '#3b82f6';
+  if (c.tipo === 'disponible') return '#3b82f6';
   if (c.tipo === 'informacion') return '#3b82f6';
   return '#3b82f6';
 }
@@ -147,7 +147,7 @@ function buildPopup(c) {
 
   const tipoLabel = {
     'solicitud': '🆘 NECESITA',
-    'oferta': '💚 OFRECE',
+    'disponible': '💚 DISPONIBLE',
     'informacion': 'ℹ️ INFO',
   }[c.tipo] || c.tipo;
 
@@ -204,7 +204,7 @@ function openEventoForm(lat, lng) {
           <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px">Tipo *</label>
           <select id="ch-tipo" required style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:4px">
             <option value="solicitud">🆘 Solicitud (necesito)</option>
-            <option value="oferta">💚 Oferta (tengo para dar)</option>
+            <option value="disponible">💚 Disponible (tengo para dar)</option>
             <option value="informacion">ℹ️ Información útil</option>
           </select>
         </div>
@@ -217,7 +217,7 @@ function openEventoForm(lat, lng) {
           <input id="ch-telefono" type="tel" required placeholder="0414-XXX-XXXX" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:4px">
         </div>
         <div>
-          <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px">¿Qué necesitas/ofreces? *</label>
+          <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px">¿Qué necesitas/tienes disponible? *</label>
           <textarea id="ch-req" required placeholder="Ej: necesito antibióticos para mi hijo, tengo 50kg de comida para donar, etc." style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:4px;min-height:60px"></textarea>
         </div>
         <div>
@@ -421,7 +421,7 @@ async function submitEvento(event, lat, lng) {
     // Mostrar matches si los hay
     if (data.matches && data.matches.length > 0) {
       setTimeout(() => {
-        showMatchesModal(data.matches, body.tipo === 'solicitud' ? 'ofertas' : 'solicitudes');
+        showMatchesModal(data.matches, body.tipo === 'solicitud' ? 'disponibles' : 'solicitudes');
       }, 800);
     }
   } catch (e) {

@@ -10,7 +10,7 @@ import { extractCategories, findMatches } from '../../lib/match.js';
 // GET /api/reportes
 // Query:
 //   ?sector=salud
-//   ?tipo=solicitud|oferta|informacion
+//   ?tipo=solicitud|disponible|informacion
 //   ?estado=aprobado (default)
 //   ?urgencia=critica
 //   ?estado_loc=Miranda
@@ -73,7 +73,7 @@ export async function onRequestPost({ env, request }) {
   }
 
   const tipo = body.tipo || 'solicitud';
-  if (!['solicitud', 'oferta', 'informacion'].includes(tipo)) {
+  if (!['solicitud', 'disponible', 'informacion'].includes(tipo)) {
     return error('Tipo invalido', 422);
   }
 

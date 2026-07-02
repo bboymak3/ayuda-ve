@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS chulitos (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
   tipo            TEXT NOT NULL DEFAULT 'solicitud',
                     -- 'solicitud' (necesita)
-                    -- 'oferta' (tiene para dar)
+                    -- 'disponible' (tiene para dar)
                     -- 'informacion' (punto util)
   titulo          TEXT NOT NULL,
   descripcion     TEXT,

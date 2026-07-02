@@ -198,11 +198,14 @@ async function loadModerar() {
   list.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div></div>';
   try {
     const data = await adminApi('/api/admin/moderar');
+    // Defensivo: si el endpoint no devuelve alguna key, usar array vacío
+    const reportes = data.reportes || [];
+    const chulitos = data.chulitos || [];
     let html = '';
 
-    if (data.reportes.length > 0) {
-      html += `<h3>📝 Reportes pendientes (${data.reportes.length})</h3>`;
-      html += data.reportes.map(r => `
+    if (reportes.length > 0) {
+      html += `<h3>📝 Reportes pendientes (${reportes.length})</h3>`;
+      html += reportes.map(r => `
         <div class="card">
           <div class="card-meta">
             <span class="urgencia-pill urgencia-${r.urgencia}">${r.urgencia}</span>
@@ -222,9 +225,9 @@ async function loadModerar() {
       `).join('');
     }
 
-    if (data.chulitos.length > 0) {
-      html += `<h3 class="mt-3">📍 Eventos recientes (${data.chulitos.length})</h3>`;
-      html += data.chulitos.slice(0, 20).map(c => `
+    if (chulitos.length > 0) {
+      html += `<h3 class="mt-3">📍 Eventos recientes (${chulitos.length})</h3>`;
+      html += chulitos.slice(0, 20).map(c => `
         <div class="card">
           <div class="card-meta">
             <span class="urgencia-pill urgencia-${c.urgencia}">${c.urgencia}</span>
@@ -243,7 +246,7 @@ async function loadModerar() {
       `).join('');
     }
 
-    if (data.reportes.length === 0 && data.chulitos.length === 0) {
+    if (reportes.length === 0 && chulitos.length === 0) {
       html = '<div class="alert alert-success">✅ No hay nada pendiente. ¡Todo al día!</div>';
     }
 
@@ -780,31 +783,86 @@ async function editarCentro(id) {
   const centro = data.centros.find(c => c.id === id);
   if (!centro) return;
 
-  const nuevoNombre = prompt('Nombre del centro:', centro.nombre_centro || '');
-  if (nuevoNombre === null) return;
-  const nuevosInsumos = prompt('Tipo de insumos:', centro.tipo_insumos);
-  if (nuevosInsumos === null) return;
-  const nuevoEncargado = prompt('Nombre del encargado:', centro.nombre_encargado);
-  if (nuevoEncargado === null) return;
-  const nuevoTelefono = prompt('Teléfono:', centro.telefono);
-  if (nuevoTelefono === null) return;
-  const nuevoHorario = prompt('Horario (opcional):', centro.horario || '');
-  if (nuevoHorario === null) return;
+  // Crear modal
+  let modal = document.getElementById('modal-editar-centro');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-editar-centro';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div style="background:white;border-radius:12px;padding:1.5rem;max-width:560px;width:100%;max-height:90vh;overflow:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h3 style="margin:0">✏️ Editar Centro #${centro.id}</h3>
+        <button onclick="document.getElementById('modal-editar-centro').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b">✕</button>
+      </div>
+
+      <form onsubmit="guardarCentroModal(event, ${id}); return false;">
+        <div class="form-group">
+          <label class="form-label">Nombre del centro</label>
+          <input id="modal-centro-nombre" type="text" class="form-input" value="${escapeHtml(centro.nombre_centro || '')}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo de insumos *</label>
+          <textarea id="modal-centro-insumos" class="form-textarea" required style="min-height:80px">${escapeHtml(centro.tipo_insumos || '')}</textarea>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Encargado *</label>
+            <input id="modal-centro-encargado" type="text" class="form-input" required value="${escapeHtml(centro.nombre_encargado || '')}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teléfono *</label>
+            <input id="modal-centro-tel" type="tel" class="form-input" required value="${escapeHtml(centro.telefono || '')}">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Dirección</label>
+            <input id="modal-centro-direccion" type="text" class="form-input" value="${escapeHtml(centro.direccion || '')}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Horario</label>
+            <input id="modal-centro-horario" type="text" class="form-input" value="${escapeHtml(centro.horario || '')}">
+          </div>
+        </div>
+        <div class="flex gap-1 mt-2" style="justify-content:flex-end">
+          <button type="button" onclick="document.getElementById('modal-editar-centro').style.display='none'" class="btn btn-outline">Cancelar</button>
+          <button type="submit" class="btn btn-primary">💾 Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+async function guardarCentroModal(event, id) {
+  event.preventDefault();
+  const btn = event.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Guardando...';
+
+  const body = {
+    nombre_centro: document.getElementById('modal-centro-nombre').value,
+    tipo_insumos: document.getElementById('modal-centro-insumos').value,
+    nombre_encargado: document.getElementById('modal-centro-encargado').value,
+    telefono: document.getElementById('modal-centro-tel').value,
+    direccion: document.getElementById('modal-centro-direccion').value,
+    horario: document.getElementById('modal-centro-horario').value,
+  };
 
   try {
-    await adminApi(`/api/centros-acopio/${id}`, {
-      method: 'PUT',
-      body: {
-        nombre_centro: nuevoNombre,
-        tipo_insumos: nuevosInsumos,
-        nombre_encargado: nuevoEncargado,
-        telefono: nuevoTelefono,
-        horario: nuevoHorario,
-      },
-    });
+    await adminApi(`/api/centros-acopio/${id}`, { method: 'PUT', body });
     showToast(`✅ Centro #${id} actualizado`, 'success');
+    document.getElementById('modal-editar-centro').style.display = 'none';
     loadCentrosAdmin();
-  } catch (e) { showToast('❌ ' + e.message, 'error'); }
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '💾 Guardar cambios';
+  }
 }
 
 async function eliminarCentro(id) {
@@ -857,10 +915,20 @@ function renderFichasAdmin(fichas) {
     list.innerHTML = '<p class="text-muted">No hay fichas.</p>';
     return;
   }
-  list.innerHTML = fichas.map(f => `
-    <div class="card" ${f.creado_por === 'admin' ? 'style="border-left:4px solid #8b5cf6"' : ''}>
+  list.innerHTML = fichas.map(f => {
+    const estadoPill = f.estado === 'pendiente'
+      ? '<span class="urgencia-pill urgencia-alta">⏳ PENDIENTE</span>'
+      : f.estado === 'aprobado'
+      ? '<span class="urgencia-pill" style="background:#d1fae5;color:#065f46">✅ APROBADA</span>'
+      : f.estado === 'rechazado'
+      ? '<span class="urgencia-pill urgencia-critica">⛔ RECHAZADA</span>'
+      : `<span class="urgencia-pill urgencia-media">${f.estado}</span>`;
+
+    return `
+    <div class="card" ${f.creado_por === 'admin' ? 'style="border-left:4px solid #8b5cf6"' : f.estado === 'pendiente' ? 'style="border-left:4px solid #f59e0b"' : ''}>
       <div class="card-meta">
         <span class="urgencia-pill urgencia-${f.urgencia}">${f.urgencia}</span>
+        ${estadoPill}
         <span class="card-meta-item">${f.sector_icono || ''} ${escapeHtml(f.sector_nombre || '')}</span>
         <span class="card-meta-item">${f.tipo}</span>
         ${f.creado_por === 'admin' ? '<span class="urgencia-pill" style="background:#ede9fe;color:#5b21b6">🤖 IA</span>' : '<span class="urgencia-pill urgencia-media">👤 Usuario</span>'}
@@ -870,13 +938,42 @@ function renderFichasAdmin(fichas) {
       <p class="card-description">${escapeHtml((f.descripcion || '').slice(0, 200))}${(f.descripcion || '').length > 200 ? '...' : ''}</p>
       ${f.contacto_nombre || f.contacto_telefono ? `<div class="text-sm">👤 ${escapeHtml(f.contacto_nombre || '')} ${f.contacto_telefono ? '· 📞 ' + escapeHtml(f.contacto_telefono) : ''}</div>` : ''}
       ${f.transcripcion ? `<div class="text-sm text-muted mt-1">📝 Tiene transcripción IA (${f.transcripcion.length} chars)</div>` : ''}
-      <div class="card-actions mt-2">
-        <button onclick="editarFicha(${f.id})" class="btn btn-sm btn-outline" style="padding:6px 12px">✏️ Editar</button>
+      <div class="card-actions mt-2" style="flex-wrap:wrap">
+        ${f.estado === 'pendiente' ? `
+          <button onclick="aprobarFicha(${f.id})" class="btn btn-sm btn-success" style="padding:6px 12px">✅ Aprobar</button>
+          <button onclick="rechazarFicha(${f.id})" class="btn btn-sm btn-warning" style="padding:6px 12px">⛔ Rechazar</button>
+        ` : f.estado === 'rechazado' ? `
+          <button onclick="aprobarFicha(${f.id})" class="btn btn-sm btn-success" style="padding:6px 12px">✅ Reactivar</button>
+        ` : ''}
+        <button onclick="abrirModalEditarFicha(${f.id})" class="btn btn-sm btn-outline" style="padding:6px 12px">✏️ Editar</button>
         <button onclick="eliminarFicha(${f.id})" class="btn btn-sm btn-danger" style="padding:6px 12px">🗑 Eliminar</button>
         <a href="/reporte/${f.id}" target="_blank" class="btn btn-sm btn-outline" style="padding:6px 12px">Ver →</a>
       </div>
     </div>
-  `).join('');
+  `}).join('');
+}
+
+async function aprobarFicha(id) {
+  try {
+    await adminApi('/api/admin/moderar', {
+      method: 'POST',
+      body: { accion: 'aprobar', entidad: 'reporte', id }
+    });
+    showToast(`✅ Ficha #${id} aprobada`, 'success');
+    loadFichasAdmin();
+  } catch (e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+async function rechazarFicha(id) {
+  if (!confirm(`¿Rechazar ficha #${id}?`)) return;
+  try {
+    await adminApi('/api/admin/moderar', {
+      method: 'POST',
+      body: { accion: 'rechazar', entidad: 'reporte', id }
+    });
+    showToast(`✅ Ficha #${id} rechazada`, 'success');
+    loadFichasAdmin();
+  } catch (e) { showToast('❌ ' + e.message, 'error'); }
 }
 
 async function eliminarFicha(id) {
@@ -890,32 +987,106 @@ async function eliminarFicha(id) {
   }
 }
 
-async function editarFicha(id) {
+// ----------------------------------------------------------
+// Modal de edición de ficha (no prompts)
+// ----------------------------------------------------------
+function abrirModalEditarFicha(id) {
   const ficha = fichasCache.find(f => f.id === id);
   if (!ficha) return;
 
-  const nuevoTitulo = prompt('Título:', ficha.titulo);
-  if (nuevoTitulo === null) return;
+  // Crear modal si no existe
+  let modal = document.getElementById('modal-editar-ficha');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-editar-ficha';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';
+    document.body.appendChild(modal);
+  }
 
-  const nuevaDesc = prompt('Descripción:', ficha.descripcion || '');
-  if (nuevaDesc === null) return;
+  modal.innerHTML = `
+    <div style="background:white;border-radius:12px;padding:1.5rem;max-width:560px;width:100%;max-height:90vh;overflow:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h3 style="margin:0">✏️ Editar Ficha #${ficha.id}</h3>
+        <button onclick="cerrarModalEditarFicha()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b">✕</button>
+      </div>
 
-  const nuevoTelefono = prompt('Teléfono:', ficha.contacto_telefono || '');
-  if (nuevoTelefono === null) return;
+      <form onsubmit="guardarFichaModal(event, ${ficha.id}); return false;">
+        <div class="form-group">
+          <label class="form-label">Título *</label>
+          <input id="modal-ficha-titulo" type="text" class="form-input" required value="${escapeHtml(ficha.titulo || '')}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
+          <textarea id="modal-ficha-desc" class="form-textarea" style="min-height:120px">${escapeHtml(ficha.descripcion || '')}</textarea>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Nombre contacto</label>
+            <input id="modal-ficha-nombre" type="text" class="form-input" value="${escapeHtml(ficha.contacto_nombre || '')}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teléfono</label>
+            <input id="modal-ficha-tel" type="tel" class="form-input" value="${escapeHtml(ficha.contacto_telefono || '')}">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Estado</label>
+            <select id="modal-ficha-estado" class="form-select">
+              <option value="pendiente" ${ficha.estado === 'pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
+              <option value="aprobado" ${ficha.estado === 'aprobado' ? 'selected' : ''}>✅ Aprobada</option>
+              <option value="rechazado" ${ficha.estado === 'rechazado' ? 'selected' : ''}>⛔ Rechazada</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Urgencia</label>
+            <select id="modal-ficha-urgencia" class="form-select">
+              <option value="baja" ${ficha.urgencia === 'baja' ? 'selected' : ''}>🟢 Baja</option>
+              <option value="media" ${ficha.urgencia === 'media' ? 'selected' : ''}>🔵 Media</option>
+              <option value="alta" ${ficha.urgencia === 'alta' ? 'selected' : ''}>🟡 Alta</option>
+              <option value="critica" ${ficha.urgencia === 'critica' ? 'selected' : ''}>🔴 Crítica</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-1 mt-2" style="justify-content:flex-end">
+          <button type="button" onclick="cerrarModalEditarFicha()" class="btn btn-outline">Cancelar</button>
+          <button type="submit" class="btn btn-primary">💾 Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+function cerrarModalEditarFicha() {
+  const modal = document.getElementById('modal-editar-ficha');
+  if (modal) modal.style.display = 'none';
+}
+
+async function guardarFichaModal(event, id) {
+  event.preventDefault();
+  const btn = event.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Guardando...';
+
+  const body = {
+    titulo: document.getElementById('modal-ficha-titulo').value,
+    descripcion: document.getElementById('modal-ficha-desc').value,
+    contacto_nombre: document.getElementById('modal-ficha-nombre').value,
+    contacto_telefono: document.getElementById('modal-ficha-tel').value,
+    estado: document.getElementById('modal-ficha-estado').value,
+    urgencia: document.getElementById('modal-ficha-urgencia').value,
+  };
 
   try {
-    await adminApi(`/api/admin/fichas/${id}`, {
-      method: 'PUT',
-      body: {
-        titulo: nuevoTitulo,
-        descripcion: nuevaDesc,
-        contacto_telefono: nuevoTelefono,
-      },
-    });
+    await adminApi(`/api/admin/fichas/${id}`, { method: 'PUT', body });
     showToast(`✅ Ficha #${id} actualizada`, 'success');
+    cerrarModalEditarFicha();
     loadFichasAdmin();
   } catch (e) {
     showToast('❌ ' + e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '💾 Guardar cambios';
   }
 }
 

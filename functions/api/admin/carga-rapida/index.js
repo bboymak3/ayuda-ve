@@ -12,7 +12,7 @@ import { logAction } from '../../../lib/db.js';
 // POST /api/admin/carga-rapida
 // Body: {
 //   tipo_entidad: "reporte" | "chulito",
-//   tipo: "solicitud" | "oferta" | "informacion",
+//   tipo: "solicitud" | "disponible" | "informacion",
 //   sector_id?, categoria?,
 //   titulo, descripcion, requerimiento,
 //   nombre, telefono, red_social?,

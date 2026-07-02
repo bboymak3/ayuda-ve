@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Últimas Noticias — Ayuda VE</title>
-  <meta name="description" content="Todas las publicaciones recientes: necesidades, ofertas e información útil. Actualizado en tiempo real.">
+  <meta name="description" content="Todas las publicaciones recientes: necesidades, disponibles e información útil. Actualizado en tiempo real.">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
 </head>
@@ -27,12 +27,12 @@
 
   <div class="container">
     <h1 class="section-title">📰 Últimas Noticias</h1>
-    <p class="section-subtitle">Todas las publicaciones recientes: necesidades, ofertas e información útil. Actualizado en tiempo real.</p>
+    <p class="section-subtitle">Todas las publicaciones recientes: necesidades, disponibles e información útil. Actualizado en tiempo real.</p>
 
     <div class="flex gap-1 mb-2" style="flex-wrap:wrap">
       <button class="btn btn-sm btn-outline" data-tipo="" onclick="filtrar('')">📋 Todas</button>
       <button class="btn btn-sm btn-outline" data-tipo="solicitud" onclick="filtrar('solicitud')">🆘 Necesitan</button>
-      <button class="btn btn-sm btn-outline" data-tipo="oferta" onclick="filtrar('oferta')">💚 Ofrecen</button>
+      <button class="btn btn-sm btn-outline" data-tipo="disponible" onclick="filtrar('disponible')">💚 Disponibles</button>
       <button class="btn btn-sm btn-outline" data-tipo="informacion" onclick="filtrar('informacion')">ℹ️ Info</button>
       <button class="btn btn-sm btn-primary" onclick="loadNoticias()">🔄 Actualizar</button>
     </div>
@@ -92,7 +92,7 @@
     function renderNoticia(p) {
       const tipoLabel = {
         'solicitud': '🆘 NECESITA AYUDA',
-        'oferta': '💚 OFRECE AYUDA',
+        'disponible': '💚 DISPONIBLE PARA DONAR',
         'informacion': 'ℹ️ INFORMACIÓN',
       }[p.tipo] || p.tipo;
 

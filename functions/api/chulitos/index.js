@@ -10,7 +10,7 @@ import { extractCategories, findMatches } from '../../lib/match.js';
 // ----------------------------------------------------------
 // GET /api/chulitos
 // Query params:
-//   ?tipo=solicitud|oferta|informacion
+//   ?tipo=solicitud|disponible|informacion
 //   ?estado=activo|resuelto|eliminado  (default: activo)
 //   ?urgencia=critica|alta|media|baja
 //   ?categoria=salud.medico
@@ -92,8 +92,8 @@ export async function onRequestPost({ env, request }) {
 
   // Validar tipo
   const tipo = body.tipo || 'solicitud';
-  if (!['solicitud', 'oferta', 'informacion'].includes(tipo)) {
-    return error('Tipo invalido. Debe ser: solicitud, oferta o informacion', 422);
+  if (!['solicitud', 'disponible', 'informacion'].includes(tipo)) {
+    return error('Tipo invalido. Debe ser: solicitud, disponible o informacion', 422);
   }
 
   // Validar urgencia

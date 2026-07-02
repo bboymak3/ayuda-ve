@@ -54,7 +54,7 @@ export async function findMatches(reporte, db, limit = 10) {
 
   // Determinar el tipo opuesto
   const tipoOriginal = reporte.tipo || 'solicitud';
-  const tipoOpuesto = tipoOriginal === 'solicitud' ? 'oferta' : 'solicitud';
+  const tipoOpuesto = tipoOriginal === 'solicitud' ? 'disponible' : 'solicitud';
 
   // Para cada categoria, encontrar la categoria opuesta via match_rules
   const categoriasOpuestas = await getCategoriasOpuestas(categorias, db);

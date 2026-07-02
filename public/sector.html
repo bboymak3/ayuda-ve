@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Categoría — Ayuda VE</title>
-  <meta name="description" content="Explora necesidades y ofertas en esta categoría.">
+  <meta name="description" content="Explora necesidades y disponibles en esta categoría.">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
 </head>
@@ -31,7 +31,7 @@
     <div class="flex gap-1 mb-2" style="background:#f1f5f9;padding:4px;border-radius:8px">
       <button id="tab-todas" class="btn btn-sm" style="flex:1;background:white;border:none" onclick="switchTab('todas')">📋 Todas</button>
       <button id="tab-solicitudes" class="btn btn-sm" style="flex:1;background:transparent;border:none" onclick="switchTab('solicitudes')">🆘 Necesitan</button>
-      <button id="tab-ofertas" class="btn btn-sm" style="flex:1;background:transparent;border:none" onclick="switchTab('ofertas')">💚 Ofrecen</button>
+      <button id="tab-disponibles" class="btn btn-sm" style="flex:1;background:transparent;border:none" onclick="switchTab('disponibles')">💚 Disponibles</button>
     </div>
 
     <div id="listado" class="loading-state">Cargando...</div>
@@ -70,7 +70,7 @@
           </div>
           <div class="flex gap-1 mb-2">
             <a href="/reportar.html" class="btn btn-primary">🆘 Publicar solicitud</a>
-            <a href="/reportar.html" class="btn btn-success">💚 Publicar oferta</a>
+            <a href="/reportar.html" class="btn btn-success">💚 Publicar disponible</a>
             <a href="/mapa.html" class="btn btn-outline">🗺️ Ver en mapa</a>
           </div>
         `;
@@ -83,7 +83,7 @@
 
     function switchTab(tab) {
       currentTab = tab;
-      ['todas', 'solicitudes', 'ofertas'].forEach(t => {
+      ['todas', 'solicitudes', 'disponibles'].forEach(t => {
         const btn = document.getElementById('tab-' + t);
         btn.style.background = t === tab ? 'white' : 'transparent';
       });
@@ -97,7 +97,7 @@
       try {
         let url = `/api/reportes?sector=${currentSlug}&estado=aprobado&limit=50`;
         if (currentTab === 'solicitudes') url += '&tipo=solicitud';
-        if (currentTab === 'ofertas') url += '&tipo=oferta';
+        if (currentTab === 'disponibles') url += '&tipo=disponible';
 
         const data = await api(url);
 
