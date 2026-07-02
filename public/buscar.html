@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buscar Donaciones — Ayuda VE</title>
+  <meta name="description" content="Busca necesidades y ofertas de donación por palabra clave, categoría o ubicación.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo"><span class="logo-icon">🤝</span><span>Ayuda VE</span></a>
+      <nav class="nav" id="nav">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/mapa.html" class="nav-link">Mapa</a>
+        <a href="/buscar.html" class="nav-link active">Buscar</a>
+        <a href="/reportar.html" class="nav-link">Reportar</a>
+        <a href="/admin/" class="nav-link">Admin</a>
+      </nav>
+      <button class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('mobile-open')">☰</button>
+    </div>
+  </header>
+
+  <div class="container-narrow">
+    <h1 class="section-title">🔍 Buscar Donaciones</h1>
+    <p class="section-subtitle">Busca por palabra clave. Ejemplos: "antibióticos", "agua", "médico", "grúa", "voluntarios".</p>
+
+    <form onsubmit="doSearch(event); return false;" class="mb-2">
+      <div class="form-group" style="position:relative">
+        <input type="text" id="search-input" class="form-input" placeholder="Escribe tu búsqueda..." value="" style="padding-right:120px;font-size:1.1rem;padding:14px">
+        <button type="submit" class="btn btn-primary" style="position:absolute;right:4px;top:4px;bottom:4px">🔍 Buscar</button>
+      </div>
+      <div class="form-help">
+        💡 Sugerencias:
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSearch('antibioticos')">antibióticos</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSearch('agua')">agua</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSearch('medico')">médico</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSearch('grua')">grúa</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSearch('voluntarios')">voluntarios</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSearch('caracas')">Caracas</button>
+      </div>
+    </form>
+
+    <div id="search-results"></div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    async function doSearch(event) {
+      event.preventDefault();
+      const q = document.getElementById('search-input').value.trim();
+      if (q.length < 2) {
+        showToast('Escribe al menos 2 caracteres', 'warning');
+        return;
+      }
+      await performSearch(q);
+    }
+
+    async function performSearch(q) {
+      const results = document.getElementById('search-results');
+      results.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div> Buscando...</div>';
+
+      try {
+        const data = await api(`/api/buscar?q=${encodeURIComponent(q)}&limit=30`);
+        renderResults(data, q);
+      } catch (e) {
+        results.innerHTML = `<div class="alert alert-error">Error: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function renderResults(data, q) {
+      const results = document.getElementById('search-results');
+      const total = data.total;
+      const reportes = data.resultados.reportes || [];
+      const chulitos = data.resultados.chulitos || [];
+
+      if (total === 0) {
+        results.innerHTML = `
+          <div class="card text-center">
+            <h3>Sin resultados para "${escapeHtml(q)}"</h3>
+            <p class="text-muted mb-2">Prueba con otras palabras o publica tu propia solicitud.</p>
+            <a href="/reportar.html" class="btn btn-primary">➕ Publicar solicitud</a>
+          </div>
+        `;
+        return;
+      }
+
+      let html = `<p class="mb-2"><strong>${total}</strong> resultado(s) para "${escapeHtml(q)}"</p>`;
+
+      if (reportes.length > 0) {
+        html += `<h2 class="section-title">📝 Reportes (${reportes.length})</h2>`;
+        html += reportes.map(r => renderCard(r, 'reporte')).join('');
+      }
+
+      if (chulitos.length > 0) {
+        html += `<h2 class="section-title mt-3">📍 Chulitos del mapa (${chulitos.length})</h2>`;
+        html += chulitos.map(c => renderCard(c, 'chulito')).join('');
+      }
+
+      results.innerHTML = html;
+    }
+
+    function quickSearch(q) {
+      document.getElementById('search-input').value = q;
+      performSearch(q);
+    }
+
+    // Buscar al cargar si hay ?q=
+    const initialQ = getParam('q');
+    if (initialQ) {
+      document.getElementById('search-input').value = initialQ;
+      performSearch(initialQ);
+    }
+  </script>
+</body>
+</html>

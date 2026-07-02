@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiero Ayudar — Ayuda VE</title>
+  <meta name="description" content="Encuentra a quién ayudar. Explora las necesidades activas por categoría y contacta directamente a quien necesita tu donación.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💙</text></svg>">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo"><span class="logo-icon">🤝</span><span>Ayuda VE</span></a>
+      <nav class="nav" id="nav">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/mapa.html" class="nav-link">Mapa</a>
+        <a href="/buscar.html" class="nav-link">Buscar</a>
+        <a href="/reportar.html" class="nav-link">Reportar</a>
+        <a href="/admin/" class="nav-link">Admin</a>
+      </nav>
+      <button class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('mobile-open')">☰</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <h1 class="section-title">💙 Quiero Ayudar</h1>
+    <p class="section-subtitle">Explora las necesidades activas por categoría. Toca una para ver quién necesita tu donación y contáctalo directamente.</p>
+
+    <div class="categorias-grid" id="categorias-grid">
+      <div class="loading-state">Cargando categorías...</div>
+    </div>
+
+    <h2 class="section-title mt-3">🚨 Necesidades más urgentes ahora</h2>
+    <div id="urgentes-list" class="loading-state">Cargando...</div>
+
+    <h2 class="section-title mt-3">🆘 Últimas solicitudes</h2>
+    <div id="solicitudes-list" class="loading-state">Cargando...</div>
+
+    <div class="text-center mt-3">
+      <a href="/reportar.html?tipo=oferta" class="btn btn-primary btn-lg">➕ Publicar mi oferta de donación</a>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    async function loadCategorias() {
+      try {
+        const data = await api('/api/sectores');
+        const grid = document.getElementById('categorias-grid');
+        grid.innerHTML = data.sectores.map(s => `
+          <a href="/sector.html?slug=${s.slug}" class="categoria-card">
+            <div class="categoria-icon">${s.icono}</div>
+            <div class="categoria-name">${s.nombre}</div>
+            <div class="categoria-count">${(s.descripcion || '').slice(0, 60)}...</div>
+          </a>
+        `).join('');
+      } catch (e) {
+        document.getElementById('categorias-grid').innerHTML =
+          '<div class="alert alert-error">Error cargando categorías</div>';
+      }
+    }
+
+    async function loadUrgentes() {
+      try {
+        const data = await api('/api/reportes?estado=aprobado&urgencia=critica&limit=10');
+        const list = document.getElementById('urgentes-list');
+        if (data.reportes.length === 0) {
+          list.innerHTML = '<p class="text-muted">No hay solicitudes críticas en este momento.</p>';
+          return;
+        }
+        list.innerHTML = data.reportes.map(r => renderCard(r, 'reporte')).join('');
+      } catch (e) {
+        document.getElementById('urgentes-list').innerHTML = '<div class="alert alert-error">Error cargando urgentes</div>';
+      }
+    }
+
+    async function loadSolicitudes() {
+      try {
+        const data = await api('/api/reportes?estado=aprobado&tipo=solicitud&limit=20');
+        const list = document.getElementById('solicitudes-list');
+        if (data.reportes.length === 0) {
+          list.innerHTML = '<p class="text-muted">No hay solicitudes activas aún.</p>';
+          return;
+        }
+        list.innerHTML = data.reportes.map(r => renderCard(r, 'reporte')).join('');
+      } catch (e) {
+        document.getElementById('solicitudes-list').innerHTML = '<div class="alert alert-error">Error cargando solicitudes</div>';
+      }
+    }
+
+    loadCategorias();
+    loadUrgentes();
+    loadSolicitudes();
+  </script>
+</body>
+</html>

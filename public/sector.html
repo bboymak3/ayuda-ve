@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Categoría — Ayuda VE</title>
+  <meta name="description" content="Explora necesidades y ofertas en esta categoría.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo"><span class="logo-icon">🤝</span><span>Ayuda VE</span></a>
+      <nav class="nav" id="nav">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/mapa.html" class="nav-link">Mapa</a>
+        <a href="/buscar.html" class="nav-link">Buscar</a>
+        <a href="/reportar.html" class="nav-link">Reportar</a>
+        <a href="/admin/" class="nav-link">Admin</a>
+      </nav>
+      <button class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('mobile-open')">☰</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div id="header-sector"></div>
+
+    <div class="flex gap-1 mb-2" style="background:#f1f5f9;padding:4px;border-radius:8px">
+      <button id="tab-todas" class="btn btn-sm" style="flex:1;background:white;border:none" onclick="switchTab('todas')">📋 Todas</button>
+      <button id="tab-solicitudes" class="btn btn-sm" style="flex:1;background:transparent;border:none" onclick="switchTab('solicitudes')">🆘 Necesitan</button>
+      <button id="tab-ofertas" class="btn btn-sm" style="flex:1;background:transparent;border:none" onclick="switchTab('ofertas')">💚 Ofrecen</button>
+    </div>
+
+    <div id="listado" class="loading-state">Cargando...</div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    let currentSlug = null;
+    let currentTab = 'todas';
+
+    async function loadSector() {
+      const slug = getParam('slug');
+      if (!slug) {
+        document.getElementById('header-sector').innerHTML = '<div class="alert alert-error">Falta el parámetro slug</div>';
+        return;
+      }
+      currentSlug = slug;
+
+      try {
+        const data = await api('/api/sectores');
+        const sector = data.sectores.find(s => s.slug === slug);
+        if (!sector) {
+          document.getElementById('header-sector').innerHTML = '<div class="alert alert-error">Categoría no encontrada</div>';
+          return;
+        }
+
+        document.title = `${sector.nombre} — Ayuda VE`;
+
+        document.getElementById('header-sector').innerHTML = `
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+            <div style="font-size:3rem">${sector.icono}</div>
+            <div>
+              <h1 class="section-title" style="margin:0">${escapeHtml(sector.nombre)}</h1>
+              <p class="section-subtitle" style="margin:0">${escapeHtml(sector.descripcion || '')}</p>
+            </div>
+          </div>
+          <div class="flex gap-1 mb-2">
+            <a href="/reportar.html" class="btn btn-primary">🆘 Publicar solicitud</a>
+            <a href="/reportar.html" class="btn btn-success">💚 Publicar oferta</a>
+            <a href="/mapa.html" class="btn btn-outline">🗺️ Ver en mapa</a>
+          </div>
+        `;
+
+        loadListado();
+      } catch (e) {
+        document.getElementById('header-sector').innerHTML = `<div class="alert alert-error">Error: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      ['todas', 'solicitudes', 'ofertas'].forEach(t => {
+        const btn = document.getElementById('tab-' + t);
+        btn.style.background = t === tab ? 'white' : 'transparent';
+      });
+      loadListado();
+    }
+
+    async function loadListado() {
+      const listado = document.getElementById('listado');
+      listado.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div> Cargando...</div>';
+
+      try {
+        let url = `/api/reportes?sector=${currentSlug}&estado=aprobado&limit=50`;
+        if (currentTab === 'solicitudes') url += '&tipo=solicitud';
+        if (currentTab === 'ofertas') url += '&tipo=oferta';
+
+        const data = await api(url);
+
+        if (data.reportes.length === 0) {
+          listado.innerHTML = `
+            <div class="card text-center">
+              <h3>No hay publicaciones en esta categoría aún</h3>
+              <p class="text-muted mb-2">Sé el primero en publicar aquí.</p>
+              <a href="/reportar.html" class="btn btn-primary">➕ Publicar</a>
+            </div>
+          `;
+          return;
+        }
+
+        listado.innerHTML = data.reportes.map(r => renderCard(r, 'reporte')).join('');
+      } catch (e) {
+        listado.innerHTML = `<div class="alert alert-error">Error: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    loadSector();
+  </script>
+</body>
+</html>

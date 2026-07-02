@@ -1,0 +1,44 @@
+# ============================================================
+# Configuración Cloudflare para AyudaVE
+# Plataforma de Ayuda Mutua - Venezuela
+# ============================================================
+
+name = "ayuda-ve"
+compatibility_date = "2025-01-15"
+pages_build_output_dir = "public"
+
+# ============================================================
+# Bindings (recursos de Cloudflare que usará la app)
+# ============================================================
+
+# Base de datos D1
+[[d1_databases]]
+binding = "DB"
+database_name = "ayuda-ve-db"
+database_id = "9ed75d5d-9b14-495f-9345-6550eab1f6c3"
+
+# Bucket R2 para fotos y audio
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "ayuda-ve-media"
+
+# AI de Cloudflare (Whisper para transcribir audio/video)
+[ai]
+binding = "AI"
+
+# ============================================================
+# Variables de entorno (NO secretas - visibles en el repo)
+# ============================================================
+[vars]
+SITE_URL = "https://ayuda-ve.pages.dev"   # Cambiar por tu dominio real
+SITE_NAME = "Ayuda VE"
+SITE_DESC = "Plataforma de ayuda mutua para Venezuela"
+CONTACT_EMAIL = "tu-correo@ejemplo.com"
+
+# ============================================================
+# SECRETS (configurar por CLI, NO poner aquí):
+#   wrangler pages secret put ADMIN_TOKEN
+#   wrangler pages secret put UPLOAD_RATE_LIMIT_KEY
+#
+# ADMIN_TOKEN: token largo y aleatorio que tú usarás para entrar al panel admin
+# ============================================================

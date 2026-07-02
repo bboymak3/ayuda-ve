@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sala Situacional — Ayuda VE</title>
+  <meta name="description" content="Sala situacional en tiempo real: necesidades críticas, zonas afectadas, ayuda entregada hoy. Datos actualizados de Venezuela.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo"><span class="logo-icon">🤝</span><span>Ayuda VE</span></a>
+      <nav class="nav" id="nav">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/mapa.html" class="nav-link">Mapa</a>
+        <a href="/buscar.html" class="nav-link">Buscar</a>
+        <a href="/reportar.html" class="nav-link">Reportar</a>
+        <a href="/admin/" class="nav-link">Admin</a>
+      </nav>
+      <button class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('mobile-open')">☰</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <h1 class="section-title">📊 Sala Situacional</h1>
+    <p class="section-subtitle">Panorama actualizado en tiempo real de la situación de ayuda en Venezuela.</p>
+
+    <div id="sala-content" class="loading-state">Cargando datos...</div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    async function loadSala() {
+      try {
+        const data = await api('/api/sala-situacional');
+        const s = data.sala;
+
+        let html = `
+          <div class="alert alert-info">
+            🕒 Actualizado: ${new Date(s.actualizado).toLocaleString('es-VE')}
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-value" style="color:#dc2626">${s.chulitos_criticos}</div>
+              <div class="stat-label">🔴 Chulitos críticos</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" style="color:#f59e0b">${s.reportes_pendientes}</div>
+              <div class="stat-label">⏳ Pendientes moderar</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" style="color:#10b981">${s.aprobados_hoy}</div>
+              <div class="stat-label">✅ Aprobados hoy</div>
+            </div>
+          </div>
+
+          <h2 class="section-title">🔥 Zonas más críticas</h2>
+        `;
+
+        if (s.zonas_criticas.length > 0) {
+          html += '<div class="card"><table class="admin-table"><thead><tr><th>Zona</th><th>Chulitos críticos</th></tr></thead><tbody>';
+          s.zonas_criticas.forEach(z => {
+            html += `<tr><td>${escapeHtml(z.zona)}</td><td><strong style="color:#dc2626">${z.total}</strong></td></tr>`;
+          });
+          html += '</tbody></table></div>';
+        } else {
+          html += '<p class="text-muted">Sin zonas críticas reportadas.</p>';
+        }
+
+        html += '<h2 class="section-title">📦 Reportes por sector</h2>';
+        if (s.por_sector.length > 0) {
+          html += '<div class="card"><table class="admin-table"><thead><tr><th>Sector</th><th>Total</th></tr></thead><tbody>';
+          s.por_sector.forEach(sec => {
+            html += `<tr><td>${sec.icono} ${escapeHtml(sec.nombre)}</td><td><strong>${sec.total}</strong></td></tr>`;
+          });
+          html += '</tbody></table></div>';
+        }
+
+        html += '<h2 class="section-title">📺 Últimos videos analizados</h2>';
+        if (s.ultimos_videos.length > 0) {
+          html += '<div class="card">';
+          s.ultimos_videos.forEach(v => {
+            try {
+              const r = JSON.parse(v.resumen_corto || '{}');
+              html += `
+                <div style="padding:10px;background:#f8fafc;border-radius:6px;margin-bottom:8px">
+                  <div style="font-weight:600">${escapeHtml(r.resumen || 'Sin resumen')}</div>
+                  <div class="text-sm text-muted mt-1">
+                    📺 ${escapeHtml(v.plataforma)} · 🕒 ${timeAgo(v.completed_at)}
+                  </div>
+                </div>
+              `;
+            } catch {
+              html += `<div class="text-sm">Video ${v.id}</div>`;
+            }
+          });
+          html += '</div>';
+        } else {
+          html += '<p class="text-muted">Aún no se han procesado videos.</p>';
+        }
+
+        document.getElementById('sala-content').innerHTML = html;
+      } catch (e) {
+        document.getElementById('sala-content').innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+      }
+    }
+    loadSala();
+    // Auto-refresh cada 60s
+    setInterval(loadSala, 60000);
+  </script>
+</body>
+</html>

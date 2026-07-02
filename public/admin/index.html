@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin — Ayuda VE</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo"><span class="logo-icon">🤝</span><span>Ayuda VE</span></a>
+      <nav class="nav" id="nav">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/mapa.html" class="nav-link">Mapa</a>
+        <a href="/buscar.html" class="nav-link">Buscar</a>
+        <a href="/reportar.html" class="nav-link">Reportar</a>
+        <a href="/admin/" class="nav-link active">Admin</a>
+      </nav>
+      <button class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('mobile-open')">☰</button>
+    </div>
+  </header>
+
+  <div id="login-view" class="container-narrow" style="padding-top:3rem">
+    <h1 class="section-title">🔐 Panel Administrativo</h1>
+    <p class="section-subtitle">Ingresa tu token de administrador para acceder.</p>
+    <form onsubmit="doLogin(event); return false;">
+      <div class="form-group">
+        <label class="form-label">Token de admin <span class="req">*</span></label>
+        <input type="password" id="login-token" class="form-input" required placeholder="Tu token..." style="font-family:var(--font-mono)">
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg btn-block">Ingresar →</button>
+    </form>
+  </div>
+
+  <div id="panel-view" class="hidden">
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <a href="#" data-tab="dashboard" class="active">📊 Dashboard</a>
+        <a href="#" data-tab="moderar">⏳ Moderar</a>
+        <a href="#" data-tab="chulitos">📍 Chulitos</a>
+        <a href="#" data-tab="carga-rapida">⚡ Carga rápida</a>
+        <a href="#" data-tab="video">🎥 Procesar video</a>
+        <a href="#" data-tab="categorias">📦 Categorías</a>
+        <a href="#" data-tab="settings">⚙️ Configuración</a>
+        <hr style="border:none;border-top:1px solid var(--color-border);margin:8px 0">
+        <a href="#" onclick="doLogout();return false">🚪 Cerrar sesión</a>
+      </aside>
+
+      <main class="admin-content">
+        <div id="tab-dashboard" class="tab-content">
+          <h2 class="section-title">📊 Dashboard</h2>
+          <div class="stat-grid" id="stats-grid">
+            <div class="loading-state"><div class="spinner spinner-dark"></div></div>
+          </div>
+          <h3 class="section-title">🔥 Top categorías más reportadas</h3>
+          <div id="top-categorias"></div>
+          <h3 class="section-title">📦 Reportes por sector</h3>
+          <div id="por-sector"></div>
+        </div>
+
+        <div id="tab-moderar" class="tab-content hidden">
+          <h2 class="section-title">⏳ Pendientes de moderación</h2>
+          <div id="moderar-list" class="loading-state">Cargando...</div>
+        </div>
+
+        <div id="tab-chulitos" class="tab-content hidden">
+          <h2 class="section-title">📍 Gestión de chulitos</h2>
+          <div class="flex gap-1 mb-2">
+            <input type="text" id="chulito-search" class="form-input" placeholder="Buscar chulitos..." oninput="searchChulitos()">
+          </div>
+          <div id="chulitos-list" class="loading-state">Cargando...</div>
+        </div>
+
+        <div id="tab-carga-rapida" class="tab-content hidden">
+          <h2 class="section-title">⚡ Carga rápida</h2>
+          <p class="section-subtitle">Publica directamente desde Facebook u otra fuente. Se publica como verificado.</p>
+          <form onsubmit="cargaRapida(event); return false;">
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Tipo de entidad</label>
+                <select name="tipo_entidad" class="form-select" id="cr-tipo-entidad">
+                  <option value="reporte">📝 Reporte</option>
+                  <option value="chulito">📍 Chulito en mapa</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tipo</label>
+                <select name="tipo" class="form-select">
+                  <option value="solicitud">🆘 Solicitud</option>
+                  <option value="oferta">💚 Oferta</option>
+                  <option value="informacion">ℹ️ Información</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" id="cr-sector-group">
+              <label class="form-label">Categoría</label>
+              <select name="sector_id" class="form-select" id="cr-sector"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Título <span class="req">*</span></label>
+              <input name="titulo" type="text" class="form-input" required placeholder="Título corto">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Descripción / Requerimiento <span class="req">*</span></label>
+              <textarea name="descripcion" class="form-textarea" required placeholder="Pega aquí el texto del post de Facebook..."></textarea>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Nombre contacto</label>
+                <input name="nombre" type="text" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Teléfono</label>
+                <input name="telefono" type="tel" class="form-input" placeholder="0414-XXX-XXXX">
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Estado</label>
+                <input name="ubicacion_estado" type="text" class="form-input" placeholder="Miranda">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Ciudad</label>
+                <input name="ubicacion_ciudad" type="text" class="form-input" placeholder="Caracas">
+              </div>
+            </div>
+            <div class="grid-2" id="cr-coords-group">
+              <div class="form-group">
+                <label class="form-label">Latitud (solo chulito)</label>
+                <input name="lat" type="number" step="any" class="form-input" placeholder="10.4806">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Longitud (solo chulito)</label>
+                <input name="lng" type="number" step="any" class="form-input" placeholder="-66.9036">
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Urgencia</label>
+                <select name="urgencia" class="form-select">
+                  <option value="baja">🟢 Baja</option>
+                  <option value="media" selected>🔵 Media</option>
+                  <option value="alta">🟡 Alta</option>
+                  <option value="critica">🔴 Crítica</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">URL de origen</label>
+                <input name="fuente_url" type="url" class="form-input" placeholder="URL de Facebook, etc.">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block">📤 Publicar verificado</button>
+          </form>
+        </div>
+
+        <div id="tab-video" class="tab-content hidden">
+          <h2 class="section-title">🎥 Procesar video con IA</h2>
+          <p class="section-subtitle">Sube un archivo de audio. El sistema lo transcribe con Whisper y genera un resumen con IA.</p>
+          <div class="alert alert-info">
+            ℹ️ Descarga el audio del video (puedes usar y2mate o similares) y súbelo aquí. Cloudflare Workers AI procesará el audio con Whisper y generará un resumen.
+          </div>
+          <form onsubmit="procesarVideo(event); return false;">
+            <div class="form-group">
+              <label class="form-label">Asociar a reporte (opcional)</label>
+              <input name="reporte_id" type="number" class="form-input" placeholder="ID del reporte">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Archivo de audio <span class="req">*</span></label>
+              <input name="file" type="file" accept="audio/*" required class="form-input">
+              <div class="form-help">Formatos: mp3, wav, m4a, ogg. Máximo 25MB.</div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block">🎯 Transcribir y resumir</button>
+          </form>
+          <div id="video-result" class="mt-3"></div>
+        </div>
+
+        <div id="tab-categorias" class="tab-content hidden">
+          <h2 class="section-title">📦 Categorías</h2>
+          <button onclick="showCategoriaForm()" class="btn btn-primary mb-2">➕ Nueva categoría</button>
+          <div id="categorias-list" class="loading-state">Cargando...</div>
+          <div id="categoria-form" class="hidden mt-2">
+            <div class="card">
+              <h3 id="cat-form-title">Nueva categoría</h3>
+              <form onsubmit="saveCategoria(event); return false;">
+                <input type="hidden" name="id" id="cat-id">
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label class="form-label">Nombre</label>
+                    <input name="nombre" id="cat-nombre" type="text" class="form-input" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Slug (URL)</label>
+                    <input name="slug" id="cat-slug" type="text" class="form-input" placeholder="auto-generado">
+                  </div>
+                </div>
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label class="form-label">Icono (emoji)</label>
+                    <input name="icono" id="cat-icono" type="text" class="form-input" placeholder="📦">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Color</label>
+                    <input name="color" id="cat-color" type="color" class="form-input" value="#2563EB">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Descripción</label>
+                  <textarea name="descripcion" id="cat-descripcion" class="form-textarea"></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Orden</label>
+                  <input name="orden" id="cat-orden" type="number" class="form-input" value="0">
+                </div>
+                <button type="submit" class="btn btn-primary">💾 Guardar</button>
+                <button type="button" onclick="document.getElementById('categoria-form').classList.add('hidden')" class="btn btn-outline">Cancelar</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-settings" class="tab-content hidden">
+          <h2 class="section-title">⚙️ Configuración</h2>
+          <form onsubmit="saveSettings(event); return false;">
+            <div class="form-group">
+              <label class="form-label">Título del sitio</label>
+              <input type="text" id="set-titulo" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Descripción del sitio</label>
+              <textarea id="set-descripcion" class="form-textarea"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mensaje de emergencia</label>
+              <input type="text" id="set-emergencia" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Comentarios en chulitos</label>
+              <select id="set-comentarios" class="form-select">
+                <option value="true">✅ Habilitados</option>
+                <option value="false">⛔ Deshabilitados</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mapa interactivo</label>
+              <select id="set-mapa" class="form-select">
+                <option value="true">✅ Habilitado</option>
+                <option value="false">⛔ Deshabilitado</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary">💾 Guardar configuración</button>
+          </form>
+        </div>
+
+        <div id="tab-logs" class="tab-content hidden">
+          <h2 class="section-title">📜 Logs de auditoría</h2>
+          <div id="logs-list" class="loading-state">Cargando...</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

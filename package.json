@@ -1,0 +1,24 @@
+{
+  "name": "ayuda-ve",
+  "version": "1.0.0",
+  "description": "Plataforma de Ayuda Mutua para Venezuela - Post-terremoto",
+  "private": true,
+  "scripts": {
+    "dev": "npx wrangler pages dev public --local --d1=DB --r2=BUCKET --ai",
+    "dev:remote": "npx wrangler pages dev public --remote",
+    "deploy": "npx wrangler pages deploy public --project-name=ayuda-ve",
+    "db:create": "npx wrangler d1 create ayuda-ve-db",
+    "db:migrate:local": "npx wrangler d1 execute ayuda-ve-db --local --file=schema.sql",
+    "db:migrate:remote": "npx wrangler d1 execute ayuda-ve-db --remote --file=schema.sql",
+    "db:seed:local": "npx wrangler d1 execute ayuda-ve-db --local --file=seed.sql",
+    "db:seed:remote": "npx wrangler d1 execute ayuda-ve-db --remote --file=seed.sql",
+    "r2:create": "npx wrangler r2 bucket create ayuda-ve-media",
+    "secret:admin": "npx wrangler pages secret put ADMIN_TOKEN --project-name=ayuda-ve"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

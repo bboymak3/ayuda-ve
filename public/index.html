@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ayuda VE — Plataforma de Donaciones y Ayuda Mutua en Venezuela</title>
+  <meta name="description" content="Conecta donaciones con necesidades reales en Venezuela. Medicinas, alimentos, vivienda, transporte, maquinaria y más. Mapa interactivo de necesidades y ofertas.">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Ayuda VE — Plataforma de Donaciones">
+  <meta property="og:description" content="Conecta donaciones con necesidades reales en Venezuela. Mapa interactivo, búsqueda por categoría, contacto directo.">
+  <meta property="og:locale" content="es_VE">
+
+  <!-- Schema.org -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Ayuda VE",
+    "description": "Plataforma de donaciones y ayuda mutua para Venezuela",
+    "inLanguage": "es-VE",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "/buscar.html?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤝</text></svg>">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo">
+        <span class="logo-icon">🤝</span>
+        <span>Ayuda VE</span>
+      </a>
+      <nav class="nav" id="nav">
+        <a href="/" class="nav-link active">Inicio</a>
+        <a href="/mapa.html" class="nav-link">Mapa</a>
+        <a href="/buscar.html" class="nav-link">Buscar</a>
+        <a href="/reportar.html" class="nav-link">Reportar</a>
+        <a href="/admin/" class="nav-link">Admin</a>
+      </nav>
+      <button class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('mobile-open')">☰</button>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1>🤝 Donaciones Directas, Sin Intermediarios</h1>
+    <p>Conectamos a quienes tienen algo para donar con quienes lo necesitan, en Venezuela. Medicinas, alimentos, materiales, transporte, maquinaria y más.</p>
+    <div class="hero-emergency" id="emergency-banner">
+      🚨 Emergencia: llama al <strong>911</strong> o a Protección Civil
+    </div>
+  </section>
+
+  <!-- 4 BOTONES PRINCIPALES -->
+  <div class="main-buttons">
+    <a href="/quiero-ayudar.html" class="btn-main btn-main-help">
+      <span class="btn-main-icon">💙</span>
+      <span>QUIERO AYUDAR</span>
+      <span class="text-sm" style="opacity:0.9;margin-top:4px">Tengo algo para donar</span>
+    </a>
+    <a href="/reportar.html" class="btn-main btn-main-need">
+      <span class="btn-main-icon">🆘</span>
+      <span>NECESITO AYUDA</span>
+      <span class="text-sm" style="opacity:0.9;margin-top:4px">Publico mi necesidad</span>
+    </a>
+    <a href="/mapa.html" class="btn-main btn-main-map">
+      <span class="btn-main-icon">🗺️</span>
+      <span>VER MAPA INTERACTIVO</span>
+      <span class="text-sm" style="opacity:0.9;margin-top:4px">Clic en el mapa para poner un chulito</span>
+    </a>
+    <a href="/buscar.html" class="btn-main btn-main-search">
+      <span class="btn-main-icon">🔍</span>
+      <span>BUSCAR DONACIONES</span>
+      <span class="text-sm" style="opacity:0.9;margin-top:4px">Por categoría, ubicación o palabra</span>
+    </a>
+  </div>
+
+  <!-- CATEGORIAS DESTACADAS -->
+  <div class="container">
+    <h2 class="section-title">Categorías de donación</h2>
+    <p class="section-subtitle">Explora las necesidades y ofertas por sector. Toca una categoría para ver qué hay disponible.</p>
+    <div class="categorias-grid" id="categorias-grid">
+      <div class="loading-state">Cargando categorías...</div>
+    </div>
+  </div>
+
+  <!-- INFO -->
+  <div class="container">
+    <h2 class="section-title">¿Cómo funciona?</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3 class="card-title">💙 Si quieres donar</h3>
+        <p class="card-description">
+          1. Entra a "Quiero Ayudar" y escoge la categoría que quieres donar (comida, medicinas, transporte, etc.).<br>
+          2. Publica tu oferta con tu nombre y teléfono.<br>
+          3. Personas que necesitan esa ayuda te contactan directamente.<br>
+          4. El sistema automáticamente encuentra solicitudes que coinciden con tu oferta.
+        </p>
+      </div>
+      <div class="card">
+        <h3 class="card-title">🆘 Si necesitas ayuda</h3>
+        <p class="card-description">
+          1. Entra a "Necesito Ayuda" y completa el formulario.<br>
+          2. Publica tu solicitud con tu contacto.<br>
+          3. Apareces en el mapa y donantes te ven.<br>
+          4. Recibes contacto directo de quienes pueden ayudarte.
+        </p>
+      </div>
+      <div class="card">
+        <h3 class="card-title">🗺️ Mapa interactivo</h3>
+        <p class="card-description">
+          Clic en cualquier punto del mapa para poner un chulito con tu necesidad u oferta. Los chulitos cambian de color según urgencia: 🔴 crítico, 🟡 alta, 🔵 información/oferta, 🟢 resuelto. Cualquiera puede poner chulitos, sin restricción.
+        </p>
+      </div>
+      <div class="card">
+        <h3 class="card-title">🔍 Búsqueda inteligente</h3>
+        <p class="card-description">
+          Busca por palabra clave. El sistema conecta automáticamente donaciones con necesidades similares (ej: "antibióticos" encuentra farmacias y donantes de medicinas; "médico" encuentra hospitales activos).
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enlace a venezuelatebusca -->
+  <div class="container" style="background:#fef3c7;border-radius:12px;padding:1.5rem;margin:2rem auto;border:1px solid #fcd34d">
+    <h2 style="font-size:1.2rem;margin-bottom:0.5rem">👥 ¿Buscas a una persona?</h2>
+    <p style="margin-bottom:1rem;color:#92400e">
+      Para reportar o buscar personas (familiares, amigos desaparecidos), te recomendamos usar <strong>Venezuela Te Busca</strong>, una plataforma especializada en reencuentro de personas.
+    </p>
+    <a href="https://venezuelatebusca.com/" target="_blank" rel="noopener" class="btn btn-warning">
+      Ir a Venezuela Te Busca →
+    </a>
+  </div>
+
+  <footer style="background:#1e293b;color:#cbd5e1;padding:2rem 1rem;margin-top:3rem">
+    <div class="container">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;align-items:center">
+        <div>
+          <strong style="color:white">🤝 Ayuda VE</strong><br>
+          <small>Plataforma ciudadana de donaciones y ayuda mutua</small>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+          <a href="/admin/" style="color:#94a3b8">Panel Admin</a>
+          <a href="/api/sitemap" style="color:#94a3b8">Sitemap</a>
+          <a href="https://venezuelatebusca.com/" target="_blank" rel="noopener" style="color:#94a3b8">Venezuela Te Busca 👥</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/main.js"></script>
+  <script>
+    async function loadCategorias() {
+      try {
+        const res = await fetch('/api/sectores');
+        const data = await res.json();
+        const grid = document.getElementById('categorias-grid');
+        grid.innerHTML = data.sectores.map(s => `
+          <a href="/sector.html?slug=${s.slug}" class="categoria-card">
+            <div class="categoria-icon">${s.icono}</div>
+            <div class="categoria-name">${s.nombre}</div>
+            <div class="categoria-count">${(s.descripcion || '').slice(0, 60)}...</div>
+          </a>
+        `).join('');
+      } catch (e) {
+        document.getElementById('categorias-grid').innerHTML =
+          '<div class="alert alert-error">Error cargando categorías. Recarga la página.</div>';
+      }
+    }
+    loadCategorias();
+  </script>
+</body>
+</html>

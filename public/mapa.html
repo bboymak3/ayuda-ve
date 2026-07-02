@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa Interactivo — Ayuda VE</title>
+  <meta name="description" content="Mapa interactivo de necesidades y ofertas de ayuda en Venezuela. Haz clic para poner un chulito.">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    body { overflow: hidden; }
+    .map-page-header {
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .map-page-title { font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .map-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .map-filter-btn {
+      padding: 4px 10px;
+      border-radius: 9999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .map-filter-btn.active { background: var(--color-primary); color: white; border-color: var(--color-primary); }
+  </style>
+</head>
+<body>
+
+  <header class="header" style="padding: 0;">
+    <div class="header-inner" style="padding: 0.5rem 1rem;">
+      <a href="/" class="logo">
+        <span class="logo-icon">🤝</span>
+        <span>Ayuda VE</span>
+      </a>
+      <nav class="nav" id="nav">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/mapa.html" class="nav-link active">Mapa</a>
+        <a href="/buscar.html" class="nav-link">Buscar</a>
+        <a href="/reportar.html" class="nav-link">Reportar</a>
+        <a href="/admin/" class="nav-link">Admin</a>
+      </nav>
+      <button class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('mobile-open')">☰</button>
+    </div>
+  </header>
+
+  <div class="map-page-header">
+    <div class="map-page-title">🗺️ Mapa Interactivo</div>
+    <div class="map-filters">
+      <button class="map-filter-btn active" data-filter="all">Todos</button>
+      <button class="map-filter-btn" data-filter="solicitud" style="color:#dc2626">🆘 Solicitudes</button>
+      <button class="map-filter-btn" data-filter="oferta" style="color:#10b981">💚 Ofertas</button>
+      <button class="map-filter-btn" data-filter="informacion" style="color:#3b82f6">ℹ️ Info</button>
+      <button class="map-filter-btn" data-filter="resuelto" style="color:#10b981">✅ Resueltos</button>
+    </div>
+  </div>
+
+  <div class="map-container">
+    <div id="map"></div>
+
+    <div class="map-controls">
+      <div style="font-weight:700;margin-bottom:0.5rem">📌 Instrucciones</div>
+      <div style="color:var(--color-text-muted);line-height:1.4">
+        <strong>Clic en el mapa</strong> para poner un chulito.<br>
+        Completa los datos en el formulario que aparece.<br>
+        <small>Tu chulito es visible inmediatamente.</small>
+      </div>
+      <button class="btn btn-sm btn-outline mt-2" onclick="loadChulitos()">🔄 Actualizar</button>
+    </div>
+
+    <div class="map-legend">
+      <div style="font-weight:700;margin-bottom:4px">Leyenda</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#dc2626"></span> Crítico</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> Alta urgencia</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> Información/Oferta</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span> Resuelto</div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- JS del mapa -->
+  <script src="/js/main.js"></script>
+  <script src="/js/mapa.js"></script>
+</body>
+</html>

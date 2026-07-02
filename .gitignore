@@ -1,0 +1,18 @@
+# Dependencias
+node_modules/
+.wrangler/
+.dev.vars
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Cloudflare local
+.mf/
