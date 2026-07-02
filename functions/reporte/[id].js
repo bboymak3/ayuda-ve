@@ -144,10 +144,19 @@ function renderFichaHTML(r) {
       </div>
     ` : ''}
 
-    ${r.fuente_url ? `
+    ${r.embed_html ? `
       <div class="ficha-section">
-        <h3>🔗 Fuente</h3>
-        <a href="${escapeAttr(r.fuente_url)}" target="_blank" class="btn btn-outline">Ver publicación original →</a>
+        <h3>📘 Publicación original (embed)</h3>
+        <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;max-width:100%">
+          ${r.embed_html}
+        </div>
+      </div>
+    ` : ''}
+
+    ${(r.fuente_url || r.video_url) ? `
+      <div class="ficha-section">
+        <h3>🔗 Fuente original</h3>
+        <a href="${escapeAttr(r.fuente_url || r.video_url)}" target="_blank" rel="noopener" class="btn btn-primary">Ver publicación original →</a>
       </div>
     ` : ''}
 

@@ -105,6 +105,26 @@
         ? `${p.sector_icono} ${escapeHtml(p.sector_nombre)}`
         : (p.categoria ? `🏷️ ${escapeHtml(p.categoria)}` : '');
 
+      // Embed HTML (Facebook iframe)
+      const embedHtml = p.embed_html || null;
+      // URL de fuente original
+      const fuenteUrl = p.video_url || p.fuente_url || null;
+      // Detectar plataforma
+      let plataformaIcon = '🔗';
+      if (fuenteUrl) {
+        const u = fuenteUrl.toLowerCase();
+        if (u.includes('facebook')) plataformaIcon = '📘';
+        else if (u.includes('instagram')) plataformaIcon = '📷';
+        else if (u.includes('whatsapp')) plataformaIcon = '💬';
+        else if (u.includes('youtube')) plataformaIcon = '▶️';
+        else if (u.includes('twitter') || u.includes('x.com')) plataformaIcon = '🐦';
+      }
+
+      // Título como link si hay fuente
+      const tituloHTML = fuenteUrl
+        ? `<h3 class="card-title"><a href="${escapeHtml(fuenteUrl)}" target="_blank" rel="noopener">${escapeHtml(p.titulo || 'Sin título')}</a></h3>`
+        : `<h3 class="card-title">${escapeHtml(p.titulo || 'Sin título')}</h3>`;
+
       return `
         <div class="card">
           <div class="card-meta">
@@ -114,16 +134,31 @@
             <span class="card-meta-item">${fuenteLabel}</span>
             <span class="card-meta-item">🕒 ${timeAgo(p.created_at)}</span>
           </div>
-          <h3 class="card-title">${escapeHtml(p.titulo || (p.descripcion || '').slice(0, 80) || 'Sin título')}</h3>
-          <p class="card-description">${escapeHtml((p.descripcion || '').slice(0, 300))}${(p.descripcion || '').length > 300 ? '...' : ''}</p>
-          ${fotos && fotos.length > 0 ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">${fotos.slice(0,3).map(u => `<img src="${escapeHtml(u)}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid #e2e8f0">`).join('')}</div>` : ''}
+          ${tituloHTML}
+          <p class="card-description">${escapeHtml((p.descripcion || '').slice(0, 500))}${(p.descripcion || '').length > 500 ? '...' : ''}</p>
+
+          ${embedHtml ? `
+            <div style="margin:12px 0;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;max-width:100%">
+              ${embedHtml}
+            </div>
+          ` : ''}
+
+          ${fotos && fotos.length > 0 ? `
+            <div style="margin:8px 0">
+              <img src="${escapeHtml(fotos[0])}" style="width:100%;max-height:400px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0" loading="lazy">
+              ${fotos.length > 1 ? `<div class="text-sm text-muted mt-1">+${fotos.length - 1} imagen(es) más</div>` : ''}
+            </div>
+          ` : ''}
+
           <div class="card-contact">
             ${p.contacto_nombre ? `<div>👤 ${escapeHtml(p.contacto_nombre)}</div>` : ''}
             ${p.contacto_telefono ? `<div>📞 <a href="tel:${escapeHtml(p.contacto_telefono)}">${escapeHtml(p.contacto_telefono)}</a> · <a href="${whatsappLink(p.contacto_telefono)}" target="_blank">WhatsApp</a></div>` : ''}
             ${ubicacion ? `<div style="color:#64748b">📍 ${escapeHtml(ubicacion)}</div>` : ''}
           </div>
-          <div class="card-actions">
+
+          <div class="card-actions" style="flex-wrap:wrap">
             <a href="${p.url}" class="btn btn-sm btn-primary">Ver ficha completa →</a>
+            ${fuenteUrl ? `<a href="${escapeHtml(fuenteUrl)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline">${plataformaIcon} Ver en fuente original →</a>` : ''}
           </div>
         </div>
       `;

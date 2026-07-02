@@ -41,6 +41,7 @@ export async function onRequestGet({ env, request }) {
       null as lat, null as lng, r.urgencia, r.estado,
       r.sector_id, s.nombre as sector_nombre, s.icono as sector_icono,
       r.foto_urls, r.categoria_especifica,
+      r.embed_html, r.tipo_fuente, r.video_url, r.fuente_url, r.fuente_plataforma,
       'reporte' as fuente,
       r.created_at
     FROM reportes r

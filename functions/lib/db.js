@@ -27,6 +27,8 @@ export const REPORTE_FIELDS = `
   r.transcripcion,
   r.fuente_url,
   r.fuente_plataforma,
+  r.embed_html,
+  r.tipo_fuente,
   r.tags,
   r.creado_por,
   r.views,

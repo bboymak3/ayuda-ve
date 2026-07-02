@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Repostear desde otras redes — Ayuda VE</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📢</text></svg>">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo"><span class="logo-icon">🤝</span><span>Ayuda VE</span></a>
+      <nav class="nav" id="nav">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/mapa.html" class="nav-link">Mapa</a>
+        <a href="/buscar.html" class="nav-link">Buscar</a>
+        <a href="/reportar.html" class="nav-link">Reportar</a>
+        <a href="/admin/" class="nav-link">Admin</a>
+      </nav>
+      <button class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('mobile-open')">☰</button>
+    </div>
+  </header>
+
+  <div class="container-narrow">
+    <h1 class="section-title">📢 Repostear desde otras redes</h1>
+    <p class="section-subtitle">Pega el contenido que viste en Facebook, Instagram u otra red. Se crea una ficha con link a la fuente original.</p>
+
+    <div id="auth-check" class="alert alert-warning">
+      🔐 Necesitas token de admin para repostear. <a href="/admin/">Inicia sesión aquí</a> primero.
+    </div>
+
+    <div id="repost-form-wrap" class="hidden">
+
+      <!-- Tipo de contenido -->
+      <div class="form-group">
+        <label class="form-label">¿Qué tipo de contenido vas a repostear?</label>
+        <div class="grid-2">
+          <label style="padding:10px;border:1px solid var(--color-border);border-radius:6px;cursor:pointer;text-align:center" id="lbl-fb">
+            <input type="radio" name="tipo_contenido" value="facebook_embed" checked onchange="switchTipo()">
+            <strong>📘 Embed Facebook</strong>
+            <div class="text-sm text-muted">Pega el código iframe</div>
+          </label>
+          <label style="padding:10px;border:1px solid var(--color-border);border-radius:6px;cursor:pointer;text-align:center" id="lbl-img">
+            <input type="radio" name="tipo_contenido" value="imagen_url" onchange="switchTipo()">
+            <strong>🖼️ URL de imagen</strong>
+            <div class="text-sm text-muted">Pega link de foto</div>
+          </label>
+          <label style="padding:10px;border:1px solid var(--color-border);border-radius:6px;cursor:pointer;text-align:center" id="lbl-vid">
+            <input type="radio" name="tipo_contenido" value="video_url" onchange="switchTipo()">
+            <strong>🎥 URL de video</strong>
+            <div class="text-sm text-muted">Para transcribir con IA</div>
+          </label>
+          <label style="padding:10px;border:1px solid var(--color-border);border-radius:6px;cursor:pointer;text-align:center" id="lbl-manual">
+            <input type="radio" name="tipo_contenido" value="manual" onchange="switchTipo()">
+            <strong>✏️ Manual</strong>
+            <div class="text-sm text-muted">Solo texto</div>
+          </label>
+        </div>
+      </div>
+
+      <form id="form-repost" onsubmit="submitRepost(event); return false;">
+
+        <!-- Campo Facebook embed -->
+        <div class="form-group" id="campo-embed">
+          <label class="form-label">Código iframe de Facebook *</label>
+          <textarea id="embed_html" class="form-textarea" style="min-height:120px;font-family:var(--font-mono);font-size:0.85rem"
+            placeholder='<iframe src="https://www.facebook.com/plugins/post.php?href=..." width="500" height="654" ...></iframe>'></textarea>
+          <div class="form-help">
+            ℹ️ En Facebook: clic en los 3 puntos del post → <strong>"Insertar"</strong> → copia todo el código que empieza con <code>&lt;iframe</code>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline mt-1" onclick="extraerUrlDeEmbed()">🔗 Extraer URL del embed</button>
+          <div id="embed-url-extraida" class="text-sm text-muted mt-1"></div>
+          <div id="embed-preview" class="mt-2"></div>
+        </div>
+
+        <!-- Campo imagen URL -->
+        <div class="form-group hidden" id="campo-imagen">
+          <label class="form-label">URL de la imagen *</label>
+          <input id="imagen_url" type="url" class="form-input" placeholder="https://..." oninput="previewImagen()">
+          <div class="form-help">Pega el link directo a la imagen (debe terminar en .jpg, .png, etc.)</div>
+          <div id="imagen-preview" class="mt-2"></div>
+        </div>
+
+        <!-- URL de origen (común a todos) -->
+        <div class="form-group">
+          <label class="form-label">URL de origen (link al post original)</label>
+          <input id="url_origen" type="url" class="form-input" placeholder="https://www.facebook.com/.../posts/...">
+          <div class="form-help">Aparecerá como botón "Ver fuente original →" en la ficha</div>
+        </div>
+
+        <hr class="mb-2 mt-2" style="border:none;border-top:1px solid var(--color-border)">
+
+        <!-- Datos del contenido -->
+        <div class="form-group">
+          <label class="form-label">Título *</label>
+          <input id="titulo" type="text" class="form-input" required placeholder="Título corto del contenido">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descripción / Resumen *</label>
+          <textarea id="descripcion" class="form-textarea" required style="min-height:120px" placeholder="Pega aquí el texto del post, o escribe un resumen de lo que se ve en el video/imagen"></textarea>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Tipo</label>
+            <select id="tipo" class="form-select">
+              <option value="informacion" selected>ℹ️ Información útil</option>
+              <option value="solicitud">🆘 Solicitud (alguien necesita)</option>
+              <option value="disponible">💚 Disponible (alguien tiene)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Categoría</label>
+            <select id="sector_id" class="form-select"></select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Urgencia</label>
+            <select id="urgencia" class="form-select">
+              <option value="baja">🟢 Baja</option>
+              <option value="media" selected>🔵 Media</option>
+              <option value="alta">🟡 Alta</option>
+              <option value="critica">🔴 Crítica</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Plataforma origen</label>
+            <select id="plataforma" class="form-select">
+              <option value="">Auto-detectar</option>
+              <option value="facebook">📘 Facebook</option>
+              <option value="instagram">📷 Instagram</option>
+              <option value="whatsapp">💬 WhatsApp</option>
+              <option value="twitter">🐦 Twitter/X</option>
+              <option value="youtube">▶️ YouTube</option>
+              <option value="otro">🔗 Otra</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Contacto (nombre)</label>
+            <input id="contacto_nombre" type="text" class="form-input" placeholder="Si se menciona en el post">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contacto (teléfono)</label>
+            <input id="contacto_telefono" type="tel" class="form-input" placeholder="0414-XXX-XXXX">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Estado</label>
+            <input id="ubicacion_estado" type="text" class="form-input" placeholder="Miranda" list="estados-ve">
+            <datalist id="estados-ve">
+              <option>Distrito Capital</option><option>Miranda</option><option>Vargas</option>
+              <option>Carabobo</option><option>Aragua</option><option>Lara</option>
+              <option>Zulia</option><option>Merida</option><option>Tachira</option>
+              <option>Barinas</option><option>Portuguesa</option><option>Cojedes</option>
+              <option>Yaracuy</option><option>Falcon</option><option>Nueva Esparta</option>
+              <option>Anzoategui</option><option>Sucre</option><option>Monagas</option>
+              <option>Bolivar</option><option>Amazonas</option><option>Delta Amacuro</option>
+              <option>Apure</option><option>Guarico</option><option>Trujillo</option>
+            </datalist>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ciudad</label>
+            <input id="ubicacion_ciudad" type="text" class="form-input" placeholder="Caracas">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">¿También crear evento en el mapa?</label>
+          <div class="flex gap-1" style="align-items:center">
+            <input id="crear_chulito" type="checkbox" style="width:auto">
+            <label for="crear_chulito" class="text-sm">Sí, crear también un evento en el mapa (necesitará lat/lng abajo)</label>
+          </div>
+        </div>
+
+        <div class="grid-2 hidden" id="coords-group">
+          <div class="form-group">
+            <label class="form-label">Latitud</label>
+            <input id="lat" type="number" step="any" class="form-input" placeholder="10.4806">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Longitud</label>
+            <input id="lng" type="number" step="any" class="form-input" placeholder="-66.9036">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg btn-block">📤 Publicar repost</button>
+      </form>
+
+      <div id="resultado" class="mt-3"></div>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    // Verificar auth
+    const token = localStorage.getItem('ayudave_admin_token');
+    if (token) {
+      document.getElementById('auth-check').classList.add('hidden');
+      document.getElementById('repost-form-wrap').classList.remove('hidden');
+      loadSectores();
+    }
+
+    // Cargar sectores
+    async function loadSectores() {
+      try {
+        const data = await api('/api/sectores');
+        document.getElementById('sector_id').innerHTML =
+          '<option value="">Selecciona...</option>' +
+          data.sectores.map(s => `<option value="${s.id}">${s.icono} ${s.nombre}</option>`).join('');
+      } catch (e) { console.error(e); }
+    }
+
+    // Cambiar tipo de contenido
+    function switchTipo() {
+      const tipo = document.querySelector('input[name="tipo_contenido"]:checked').value;
+      document.getElementById('campo-embed').classList.toggle('hidden', tipo !== 'facebook_embed');
+      document.getElementById('campo-imagen').classList.toggle('hidden', tipo !== 'imagen_url');
+
+      // Resaltar el seleccionado
+      ['lbl-fb', 'lbl-img', 'lbl-vid', 'lbl-manual'].forEach(id => {
+        document.getElementById(id).style.background = '';
+      });
+      const map = { facebook_embed: 'lbl-fb', imagen_url: 'lbl-img', video_url: 'lbl-vid', manual: 'lbl-manual' };
+      document.getElementById(map[tipo]).style.background = '#dbeafe';
+    }
+    switchTipo();
+
+    // Checkbox crear_chulito
+    document.getElementById('crear_chulito').addEventListener('change', (e) => {
+      document.getElementById('coords-group').classList.toggle('hidden', !e.target.checked);
+      if (e.target.checked && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          document.getElementById('lat').value = pos.coords.latitude.toFixed(5);
+          document.getElementById('lng').value = pos.coords.longitude.toFixed(5);
+        }, () => {}, { timeout: 5000 });
+      }
+    });
+
+    // Extraer URL del embed de Facebook
+    function extraerUrlDeEmbed() {
+      const code = document.getElementById('embed_html').value;
+      const match = code.match(/href=([^&"']+)/);
+      if (match) {
+        const url = decodeURIComponent(match[1].replace(/["']/g, ''));
+        document.getElementById('url_origen').value = url;
+        document.getElementById('embed-url-extraida').innerHTML = `✅ URL extraída: <a href="${url}" target="_blank">${url}</a>`;
+        previewEmbed();
+      } else {
+        document.getElementById('embed-url-extraida').innerHTML = '<span style="color:#dc2626">❌ No se encontró URL en el código</span>';
+      }
+    }
+
+    // Preview del embed
+    function previewEmbed() {
+      const code = document.getElementById('embed_html').value.trim();
+      const preview = document.getElementById('embed-preview');
+      if (code && code.startsWith('<iframe')) {
+        preview.innerHTML = `<div class="text-sm text-muted mb-1">Vista previa:</div>${code}`;
+      } else {
+        preview.innerHTML = '';
+      }
+    }
+    document.getElementById('embed_html').addEventListener('input', previewEmbed);
+
+    // Preview de imagen
+    function previewImagen() {
+      const url = document.getElementById('imagen_url').value.trim();
+      const preview = document.getElementById('imagen-preview');
+      if (url) {
+        preview.innerHTML = `<div class="text-sm text-muted mb-1">Vista previa:</div><img src="${url}" style="max-width:100%;max-height:300px;border-radius:8px;border:1px solid #e2e8f0" onerror="this.parentElement.innerHTML='<small style=color:#dc2626>No se pudo cargar la imagen</small>'">`;
+      } else {
+        preview.innerHTML = '';
+      }
+    }
+
+    // Submit
+    async function submitRepost(event) {
+      event.preventDefault();
+      const btn = event.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Publicando...';
+
+      const tipoContenido = document.querySelector('input[name="tipo_contenido"]:checked').value;
+      const body = {
+        tipo_contenido: tipoContenido,
+        url_origen: document.getElementById('url_origen').value || null,
+        embed_html: document.getElementById('embed_html').value || null,
+        imagen_url: document.getElementById('imagen_url').value || null,
+        titulo: document.getElementById('titulo').value,
+        descripcion: document.getElementById('descripcion').value,
+        tipo: document.getElementById('tipo').value,
+        sector_id: parseInt(document.getElementById('sector_id').value, 10) || 8,
+        urgencia: document.getElementById('urgencia').value,
+        contacto_nombre: document.getElementById('contacto_nombre').value || null,
+        contacto_telefono: document.getElementById('contacto_telefono').value || null,
+        ubicacion_estado: document.getElementById('ubicacion_estado').value || null,
+        ubicacion_ciudad: document.getElementById('ubicacion_ciudad').value || null,
+        crear_chulito: document.getElementById('crear_chulito').checked,
+        lat: document.getElementById('lat').value || null,
+        lng: document.getElementById('lng').value || null,
+      };
+
+      try {
+        const res = await fetch('/api/admin/repostear', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error');
+
+        const resultado = document.getElementById('resultado');
+        resultado.innerHTML = `
+          <div class="alert alert-success">
+            ✅ <strong>${data.message}</strong><br>
+            📄 Ficha creada: <a href="${data.reporte_url}" target="_blank" class="btn btn-sm btn-primary mt-1">Ver ficha →</a>
+            <button onclick="navigator.clipboard.writeText('${data.reporte_url_completa}');showToast('URL copiada','success')" class="btn btn-sm btn-outline mt-1">📋 Copiar URL</button>
+            ${data.categorias_detectadas.length ? `<br><small class="text-muted">🏷️ Categorías: ${data.categorias_detectadas.join(', ')}</small>` : ''}
+          </div>
+        `;
+        window.scrollTo({ top: resultado.offsetTop - 100, behavior: 'smooth' });
+        event.target.reset();
+        switchTipo();
+      } catch (e) {
+        showToast('❌ ' + e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '📤 Publicar repost';
+      }
+    }
+  </script>
+</body>
+</html>
