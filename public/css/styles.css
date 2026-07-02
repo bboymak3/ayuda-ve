@@ -134,9 +134,15 @@ a:hover { text-decoration: underline; }
   padding: var(--space-md);
 }
 .container-narrow {
-  max-width: 720px;
+  max-width: 600px;
   margin: 0 auto;
   padding: var(--space-md);
+}
+/* Contenedor para listas de fichas (más estrecho para que sean compactas) */
+.container-feed {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: var(--space-sm) var(--space-md);
 }
 
 /* ============================================================
@@ -366,55 +372,84 @@ a:hover { text-decoration: underline; }
 .urgencia-baja    { background: #f1f5f9; color: #475569; }
 
 /* ============================================================
-   Cards de reportes/eventos
+   Cards de reportes/eventos — compactos y responsivos
    ============================================================ */
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: var(--space-md);
-  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-sm);
   transition: box-shadow 0.15s;
 }
 .card:hover { box-shadow: var(--shadow-md); }
 .card-title {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
-  margin-bottom: var(--space-xs);
+  margin-bottom: 2px;
   color: var(--color-text);
+  line-height: 1.3;
 }
 .card-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-sm);
-  font-size: 0.85rem;
+  gap: 4px 6px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-xs);
 }
 .card-meta-item {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 .card-description {
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-xs);
   color: var(--color-text);
-  line-height: 1.6;
+  line-height: 1.5;
+  font-size: 0.9rem;
 }
 .card-contact {
-  padding: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
   background: var(--color-bg);
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 .card-contact a {
   font-weight: 600;
 }
 .card-actions {
   display: flex;
-  gap: var(--space-sm);
-  margin-top: var(--space-sm);
+  gap: 4px;
+  margin-top: var(--space-xs);
   flex-wrap: wrap;
+}
+
+/* Embeds responsivos (Facebook, Instagram, etc.) */
+.card iframe,
+.ficha-section iframe,
+.embed-responsive iframe {
+  max-width: 100% !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 300px;
+  border: none !important;
+}
+
+/* Contenedor de embed responsivo */
+.embed-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+.embed-wrap iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
 }
 
 /* ============================================================
@@ -635,17 +670,31 @@ a:hover { text-decoration: underline; }
    Responsive
    ============================================================ */
 @media (max-width: 768px) {
-  .hero h1 { font-size: 1.4rem; }
+  .hero h1 { font-size: 1.3rem; }
+  .hero p { font-size: 0.9rem; }
   .main-buttons {
     grid-template-columns: 1fr;
+    gap: var(--space-sm);
+    padding: var(--space-md);
   }
+  .btn-main {
+    min-height: 100px;
+    padding: var(--space-md);
+    font-size: 1rem;
+  }
+  .btn-main-icon { font-size: 2rem; }
   .btn-main-search,
   .btn-main-map {
     grid-column: span 1;
   }
   .categorias-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-sm);
   }
+  .categoria-card {
+    padding: var(--space-sm);
+  }
+  .categoria-icon { font-size: 2rem; }
   .admin-layout {
     grid-template-columns: 1fr;
   }
@@ -659,13 +708,68 @@ a:hover { text-decoration: underline; }
   .admin-sidebar a {
     white-space: nowrap;
     margin: 0 var(--space-xs) 0 0;
+    font-size: 0.8rem;
+    padding: 4px 8px;
+  }
+  .admin-content {
+    padding: var(--space-sm);
   }
   .map-controls {
-    max-width: 200px;
+    max-width: 180px;
     font-size: 0.75rem;
   }
   .nav { display: none; }
-  .nav.mobile-open { display: flex; position: absolute; top: var(--header-h); left: 0; right: 0; background: var(--color-surface); flex-direction: column; padding: var(--space-md); border-bottom: 1px solid var(--color-border); }
+  .nav.mobile-open {
+    display: flex;
+    position: absolute;
+    top: var(--header-h);
+    left: 0; right: 0;
+    background: var(--color-surface);
+    flex-direction: column;
+    padding: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .nav.mobile-open a { padding: 8px; font-size: 0.9rem; }
+
+  /* Cards aún más compactas en móvil */
+  .card {
+    padding: var(--space-xs) var(--space-sm);
+    margin-bottom: var(--space-xs);
+  }
+  .card-title { font-size: 0.95rem; }
+  .card-description { font-size: 0.85rem; }
+  .card-contact { font-size: 0.8rem; padding: 4px 8px; }
+  .card-meta { font-size: 0.7rem; }
+  .btn-sm { font-size: 0.75rem; padding: 3px 8px; }
+
+  /* Container con menos padding en móvil */
+  .container,
+  .container-narrow,
+  .container-feed {
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  /* Grid 2 columnas → 1 columna en móvil */
+  .grid-2 { grid-template-columns: 1fr; }
+
+  /* Embeds más pequeños en móvil */
+  .card iframe,
+  .ficha-section iframe {
+    min-height: 250px;
+  }
+}
+
+/* Pantallas muy pequeñas (iPhone SE, etc.) */
+@media (max-width: 400px) {
+  .hero h1 { font-size: 1.1rem; }
+  .hero p { font-size: 0.8rem; }
+  .btn-main { min-height: 80px; font-size: 0.9rem; }
+  .btn-main-icon { font-size: 1.75rem; }
+  .categorias-grid { grid-template-columns: 1fr; }
+  .card-title { font-size: 0.9rem; }
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .stat-card { padding: var(--space-sm); }
+  .stat-card .stat-value { font-size: 1.5rem; }
 }
 
 /* Mobile menu button */

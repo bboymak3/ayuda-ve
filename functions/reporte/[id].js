@@ -147,7 +147,7 @@ function renderFichaHTML(r) {
     ${r.embed_html ? `
       <div class="ficha-section">
         <h3>📘 Publicación original (embed)</h3>
-        <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;max-width:100%">
+        <div class="embed-wrap" style="padding-bottom:120%;min-height:300px">
           ${r.embed_html}
         </div>
       </div>
