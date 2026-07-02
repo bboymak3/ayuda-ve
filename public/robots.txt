@@ -1,6 +1,85 @@
+# ============================================================
+# robots.txt — Ayuda VE
+# Permite indexación completa para Google, Gemini, ChatGPT, etc.
+# ============================================================
+
+# Todos los bots pueden indexar todo
 User-agent: *
 Allow: /
-Disallow: /admin/
-Disallow: /api/admin/
+Allow: /noticias
+Allow: /noticias.html
+Allow: /mapa
+Allow: /mapa.html
+Allow: /buscar
+Allow: /buscar.html
+Allow: /reportar
+Allow: /reportar.html
+Allow: /quiero-ayudar
+Allow: /quiero-ayudar.html
+Allow: /repostear
+Allow: /repostear.html
+Allow: /sala-situacional
+Allow: /sala-situacional.html
+Allow: /sector
+Allow: /sector.html
+Allow: /reporte/
+Allow: /evento/
+Allow: /centro-acopio/
+Allow: /perfil/
+Allow: /api/noticias
+Allow: /api/sala-situacional
+Allow: /api/sectores
+Allow: /api/chulitos
+Allow: /api/centros-acopio
+Allow: /sitemap.xml
+Allow: /api/sitemap
 
+# Bloquear panel admin (no debe ser indexado)
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/admin
+Disallow: /api/admin/
+Disallow: /api/transcribe
+Disallow: /api/upload
+Disallow: /api/settings
+
+# Bots de IA específicos (permitir todos)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# Sitemap
 Sitemap: https://ayuda-ve.pages.dev/sitemap.xml
+Sitemap: https://ayuda-ve.pages.dev/api/sitemap
+
+# Host
+Host: https://ayuda-ve.pages.dev
