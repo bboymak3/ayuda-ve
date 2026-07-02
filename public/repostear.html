@@ -63,26 +63,20 @@
 
       <form id="form-repost" onsubmit="submitRepost(event); return false;">
 
-        <!-- Campo Facebook: URL del post -->
+        <!-- ÚNICO CAMPO: pegas el código iframe de Facebook -->
         <div class="form-group" id="campo-embed">
-          <label class="form-label">🔗 URL del post de Facebook *</label>
-          <input id="fb_url" type="url" class="form-input" style="font-size:1rem"
-            placeholder="https://www.facebook.com/share/p/1AbthGiAda/"
-            oninput="onFacebookUrlChange()" autocomplete="off">
+          <label class="form-label">📋 Pega aquí el código "Insertar" de Facebook *</label>
+          <textarea id="embed_html" class="form-textarea" style="min-height:120px;font-family:var(--font-mono);font-size:0.85rem"
+            placeholder='<iframe src="https://www.facebook.com/plugins/video.php?href=..." ...></iframe>'
+            oninput="onEmbedChange()"></textarea>
           <div class="form-help">
-            💡 En Facebook: clic en <strong>"Compartir"</strong> → <strong>"Copiar enlace"</strong> → pégalo aquí.
-            El sistema construye el embed automáticamente.
+            💡 <strong>Pasos en Facebook:</strong><br>
+            1. Clic en los 3 puntos del post/video → <strong>"Insertar"</strong><br>
+            2. Copia TODO el código que empieza con <code>&lt;iframe</code><br>
+            3. Pégalo aquí arriba<br>
+            4. Todo lo demás se rellena automáticamente (título, descripción, tipo, categoría)<br>
+            5. Clic en <strong>"Publicar repost"</strong> al final
           </div>
-
-          <details class="mt-2">
-            <summary class="text-sm" style="cursor:pointer;color:var(--color-primary)">⚙️ Avanzado: pegar código iframe manualmente</summary>
-            <textarea id="embed_html" class="form-textarea mt-2" style="min-height:80px;font-family:var(--font-mono);font-size:0.8rem"
-              placeholder='<iframe src="https://www.facebook.com/plugins/post.php?href=..." ...></iframe>'
-              oninput="onEmbedManualChange()"></textarea>
-            <div class="form-help">
-              Si tienes el código "Insertar" de Facebook, pégalo aquí. Se usará en vez de generar uno automático.
-            </div>
-          </details>
 
           <div id="embed-status" class="mt-2"></div>
           <div id="embed-preview" class="mt-2"></div>
@@ -338,123 +332,126 @@
     });
 
     // ============================================================
-    // Construir iframe de Facebook desde URL
-    // Soporta 2 formatos:
-    //   1. https://www.facebook.com/share/p/ID/
-    //   2. https://www.facebook.com/USUARIO/posts/POST_ID
+    // Cuando el usuario pega el código iframe de Facebook
+    // Auto-extrae URL, genera título, descripción, tipo y categoría
     // ============================================================
-    function construirEmbedDesdeUrl(url) {
-      if (!url) return null;
-      url = url.trim();
-      if (!url.includes('facebook.com')) return null;
-
-      // URL-encodear la URL completa
-      const encoded = encodeURIComponent(url);
-
-      // Construir iframe estándar de Facebook
-      const iframe = `<iframe src="https://www.facebook.com/plugins/post.php?href=${encoded}&show_text=true&width=500" width="500" height="712" style="border:none;overflow:hidden;max-width:100%" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>`;
-
-      return iframe;
-    }
-
-    // Generar título automático desde URL de Facebook
-    function generarTituloDesdeUrl(url) {
-      if (!url) return null;
-      url = url.trim();
-
-      // Formato 1: /share/p/ID/
-      let m = url.match(/facebook\.com\/share\/(?:p|v|post)\/([^\/\?]+)/i);
-      if (m) {
-        return `Post de Facebook (${m[1]})`;
-      }
-
-      // Formato 2: /USUARIO/posts/ID
-      m = url.match(/facebook\.com\/([^\/]+)\/posts\/([^\/\?]+)/i);
-      if (m) {
-        const usuario = m[1].replace(/[._-]/g, ' ');
-        return `Post de ${usuario} (Facebook)`;
-      }
-
-      // Formato 3: /USUARIO/videos/ID
-      m = url.match(/facebook\.com\/([^\/]+)\/videos\/([^\/\?]+)/i);
-      if (m) {
-        const usuario = m[1].replace(/[._-]/g, ' ');
-        return `Video de ${usuario} (Facebook)`;
-      }
-
-      // Fallback
-      return 'Post de Facebook';
-    }
-
-    // Cuando el usuario pega/escribe la URL de Facebook
-    function onFacebookUrlChange() {
-      const url = document.getElementById('fb_url').value.trim();
+    function onEmbedChange() {
+      const code = document.getElementById('embed_html').value.trim();
       const status = document.getElementById('embed-status');
       const preview = document.getElementById('embed-preview');
 
-      if (!url) {
+      if (!code) {
         status.innerHTML = '';
         preview.innerHTML = '';
-        // Limpiar campos
-        if (!document.getElementById('embed_html').value) {
-          document.getElementById('url_origen').value = '';
-          if (!document.getElementById('titulo').dataset.userEdited) {
-            document.getElementById('titulo').value = '';
-          }
+        document.getElementById('url_origen').value = '';
+        if (!document.getElementById('titulo').dataset.userEdited) {
+          document.getElementById('titulo').value = '';
         }
         return;
       }
 
-      // Validar que es URL de Facebook
-      if (!url.includes('facebook.com') && !url.includes('fb.com') && !url.includes('fb.watch')) {
-        status.innerHTML = '<div class="alert alert-error" style="padding:6px;font-size:0.85rem">❌ La URL no parece ser de Facebook</div>';
+      // Validar que sea un iframe
+      if (!code.startsWith('<iframe') || !code.includes('</iframe>')) {
+        status.innerHTML = '<div class="alert alert-error" style="padding:6px;font-size:0.85rem">❌ El código debe empezar con &lt;iframe y terminar con &lt;/iframe&gt;</div>';
         preview.innerHTML = '';
         return;
+      }
+
+      // Extraer URL del atributo src del iframe
+      // Ej: src="https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F27348309998195533%2F..."
+      const srcMatch = code.match(/src=["']([^"']+)["']/i);
+      if (!srcMatch) {
+        status.innerHTML = '<div class="alert alert-error" style="padding:6px;font-size:0.85rem">❌ No se encontró el atributo src en el iframe</div>';
+        return;
+      }
+
+      const srcUrl = srcMatch[1];
+      // Buscar el parámetro href= que contiene la URL real del post (URL-encoded)
+      const hrefMatch = srcUrl.match(/[?&]href=([^&]+)/);
+      let urlOriginal = null;
+      if (hrefMatch) {
+        urlOriginal = decodeURIComponent(hrefMatch[1]);
+      } else {
+        // Si no hay href, usar srcUrl como URL original
+        urlOriginal = srcUrl;
       }
 
       // Llenar URL de origen
-      document.getElementById('url_origen').value = url;
+      document.getElementById('url_origen').value = urlOriginal;
 
-      // Si el campo embed_html manual está vacío, generar uno automático
-      const embedManual = document.getElementById('embed_html').value.trim();
-      let embedFinal;
-      if (embedManual && embedManual.startsWith('<iframe')) {
-        embedFinal = embedManual;
-        status.innerHTML = '<div class="alert alert-info" style="padding:6px;font-size:0.85rem">ℹ️ Usando código iframe manual (campo avanzado)</div>';
+      // Generar título según el tipo de contenido
+      let tituloGen = 'Post de Facebook';
+      let tipoLabel = 'post';
+
+      // Reel: /reel/ID
+      let m = urlOriginal.match(/facebook\.com\/reel\/([^\/\?]+)/i);
+      if (m) {
+        tituloGen = `Video Reel de Facebook (${m[1].slice(0, 12)}...)`;
+        tipoLabel = 'reel';
       } else {
-        embedFinal = construirEmbedDesdeUrl(url);
-        if (embedFinal) {
-          status.innerHTML = '<div class="alert alert-success" style="padding:6px;font-size:0.85rem">✅ Embed generado automáticamente desde la URL</div>';
+        // Video: /USUARIO/videos/ID o /watch?v=
+        m = urlOriginal.match(/facebook\.com\/([^\/]+)\/videos\/([^\/\?]+)/i);
+        if (m) {
+          const usuario = m[1].replace(/[._-]/g, ' ');
+          tituloGen = `Video de ${usuario} (Facebook)`;
+          tipoLabel = 'video';
         } else {
-          status.innerHTML = '<div class="alert alert-warning" style="padding:6px;font-size:0.85rem">⚠️ No se pudo generar el embed automáticamente. Usa el campo "Avanzado" para pegar el iframe manualmente.</div>';
-          preview.innerHTML = '';
-          return;
+          // Post: /USUARIO/posts/ID
+          m = urlOriginal.match(/facebook\.com\/([^\/]+)\/posts\/([^\/\?]+)/i);
+          if (m) {
+            const usuario = m[1].replace(/[._-]/g, ' ');
+            tituloGen = `Post de ${usuario} (Facebook)`;
+            tipoLabel = 'post';
+          } else {
+            // Share: /share/p/ID
+            m = urlOriginal.match(/facebook\.com\/share\/(?:p|v|post)\/([^\/\?]+)/i);
+            if (m) {
+              tituloGen = `Post de Facebook (${m[1]})`;
+              tipoLabel = 'post';
+            }
+          }
         }
       }
 
-      // Vista previa
-      preview.innerHTML = `<div class="text-sm text-muted mb-1">Vista previa del embed:</div><div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;max-width:100%">${embedFinal}</div>`;
-
-      // Auto-generar título si está vacío y el usuario no lo editó
+      // Llenar título si el usuario no lo ha editado
       if (!document.getElementById('titulo').dataset.userEdited) {
-        const tituloGen = generarTituloDesdeUrl(url);
-        if (tituloGen) {
-          document.getElementById('titulo').value = tituloGen;
+        document.getElementById('titulo').value = tituloGen;
+      }
+
+      // Llenar descripción si el usuario no la ha editado
+      if (!document.getElementById('descripcion').dataset.userEdited) {
+        const descAuto = `Ver publicación original de Facebook (mostrada abajo como embed). Tipo: ${tipoLabel}.`;
+        document.getElementById('descripcion').value = descAuto;
+      }
+
+      // Auto-seleccionar tipo "información" y categoría "Información Útil"
+      document.getElementById('tipo').value = 'informacion';
+      // Buscar la opción "Información Útil" en el select de sectores (suele ser id=8)
+      const sectorSelect = document.getElementById('sector_id');
+      for (const opt of sectorSelect.options) {
+        if (opt.text.includes('Información')) {
+          sectorSelect.value = opt.value;
+          break;
         }
       }
+
+      // Mostrar estado y vista previa
+      status.innerHTML = `
+        <div class="alert alert-success" style="padding:8px;font-size:0.85rem">
+          ✅ <strong>Embed detectado correctamente</strong><br>
+          📋 Tipo: ${tipoLabel}<br>
+          🔗 URL original: <a href="${urlOriginal}" target="_blank" style="word-break:break-all">${urlOriginal}</a><br>
+          📝 Título auto-generado: <em>${tituloGen}</em>
+        </div>
+      `;
+      preview.innerHTML = `<div class="text-sm text-muted mb-1">Vista previa del embed:</div><div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;max-width:100%;display:flex;justify-content:center">${code}</div>`;
     }
 
-    // Cuando el usuario edita manualmente el iframe
-    function onEmbedManualChange() {
-      const code = document.getElementById('embed_html').value.trim();
-      if (code && code.startsWith('<iframe')) {
-        // Si hay URL de FB, regenerar vista previa usando el código manual
-        onFacebookUrlChange();
-      }
-    }
-
-    // Marcar cuando el usuario edita manualmente el título
+    // Marcar cuando el usuario edita manualmente el título o descripción
     document.getElementById('titulo').addEventListener('input', function() {
+      this.dataset.userEdited = 'true';
+    });
+    document.getElementById('descripcion').addEventListener('input', function() {
       this.dataset.userEdited = 'true';
     });
 
@@ -479,38 +476,39 @@
       const tipoContenido = document.querySelector('input[name="tipo_contenido"]:checked').value;
       let titulo = document.getElementById('titulo').value.trim();
       let descripcion = document.getElementById('descripcion').value.trim();
-
-      // Para FB embed: obtener URL del post (campo principal)
       let urlOrigen = document.getElementById('url_origen').value.trim();
-      let embedHtml = document.getElementById('embed_html').value.trim();
+      const embedHtml = document.getElementById('embed_html').value.trim();
 
       if (tipoContenido === 'facebook_embed') {
-        // Si hay URL del post, usarla
-        const fbUrl = document.getElementById('fb_url').value.trim();
-        if (fbUrl) {
-          urlOrigen = fbUrl;
-          // Si no hay embed manual, generar uno automático
-          if (!embedHtml || !embedHtml.startsWith('<iframe')) {
-            embedHtml = construirEmbedDesdeUrl(fbUrl) || embedHtml;
-          }
-        }
-
-        // Validar que tengamos embedHtml
-        if (!embedHtml) {
-          showToast('❌ Pega la URL del post de Facebook', 'error');
+        // Validar que haya embedHtml
+        if (!embedHtml || !embedHtml.startsWith('<iframe')) {
+          showToast('❌ Pega el código iframe de Facebook', 'error');
           btn.disabled = false;
           btn.textContent = '📤 Publicar repost';
           return;
         }
 
         // Auto-generar título si está vacío
-        if (!titulo && urlOrigen) {
-          titulo = generarTituloDesdeUrl(urlOrigen) || 'Post de Facebook';
+        if (!titulo) {
+          titulo = 'Post de Facebook';
         }
 
         // Auto-generar descripción si está vacía
         if (!descripcion) {
           descripcion = 'Ver publicación original de Facebook (mostrada abajo como embed).';
+        }
+
+        // Si no hay url_origen, intentar extraerla del embed
+        if (!urlOrigen) {
+          const srcMatch = embedHtml.match(/src=["']([^"']+)["']/i);
+          if (srcMatch) {
+            const hrefMatch = srcMatch[1].match(/[?&]href=([^&]+)/);
+            if (hrefMatch) {
+              urlOrigen = decodeURIComponent(hrefMatch[1]);
+            } else {
+              urlOrigen = srcMatch[1];
+            }
+          }
         }
       }
 
