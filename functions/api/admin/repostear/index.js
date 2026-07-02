@@ -38,6 +38,25 @@ export async function onRequestPost({ env, request }) {
     }
   }
 
+  // Si hay embed_html pero no url_origen, extraer URL del iframe
+  if (body.embed_html && !body.url_origen) {
+    const embedStr = String(body.embed_html);
+    const srcMatch = embedStr.match(/src=["']([^"']+)["']/i);
+    if (srcMatch) {
+      const srcUrl = srcMatch[1];
+      const hrefMatch = srcUrl.match(/[?&]href=([^&]+)/);
+      if (hrefMatch) {
+        try {
+          body.url_origen = decodeURIComponent(hrefMatch[1]);
+        } catch {
+          body.url_origen = srcUrl;
+        }
+      } else {
+        body.url_origen = srcUrl;
+      }
+    }
+  }
+
   // Validaciones básicas - solo título es obligatorio (la descripción se auto-genera)
   let titulo = (body.titulo || '').trim();
   let descripcion = (body.descripcion || '').trim();
@@ -45,21 +64,27 @@ export async function onRequestPost({ env, request }) {
   // Si es FB embed y no hay título, auto-generar de la URL
   if (!titulo && body.tipo_contenido === 'facebook_embed' && body.url_origen) {
     const urlStr = String(body.url_origen);
-    let m = urlStr.match(/facebook\.com\/share\/(?:p|v|post)\/([^\/\?]+)/i);
+    let m = urlStr.match(/facebook\.com\/reel\/([^\/\?]+)/i);
     if (m) {
-      titulo = `Post de Facebook (${m[1]})`;
+      const id = m[1].length > 12 ? m[1].slice(0, 12) + '...' : m[1];
+      titulo = `Video Reel de Facebook (${id})`;
     } else {
-      m = urlStr.match(/facebook\.com\/([^\/]+)\/posts\/([^\/\?]+)/i);
+      m = urlStr.match(/facebook\.com\/share\/(?:p|v|post)\/([^\/\?]+)/i);
       if (m) {
-        const usuario = m[1].replace(/[._-]/g, ' ');
-        titulo = `Post de ${usuario} (Facebook)`;
+        titulo = `Post de Facebook (${m[1]})`;
       } else {
-        m = urlStr.match(/facebook\.com\/([^\/]+)\/videos\/([^\/\?]+)/i);
+        m = urlStr.match(/facebook\.com\/([^\/]+)\/posts\/([^\/\?]+)/i);
         if (m) {
           const usuario = m[1].replace(/[._-]/g, ' ');
-          titulo = `Video de ${usuario} (Facebook)`;
+          titulo = `Post de ${usuario} (Facebook)`;
         } else {
-          titulo = 'Post de Facebook';
+          m = urlStr.match(/facebook\.com\/([^\/]+)\/videos\/([^\/\?]+)/i);
+          if (m) {
+            const usuario = m[1].replace(/[._-]/g, ' ');
+            titulo = `Video de ${usuario} (Facebook)`;
+          } else {
+            titulo = 'Post de Facebook';
+          }
         }
       }
     }
