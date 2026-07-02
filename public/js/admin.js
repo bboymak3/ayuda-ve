@@ -114,6 +114,7 @@ function switchTab(tab) {
   if (tab === 'dashboard') loadDashboard();
   if (tab === 'moderar') loadModerar();
   if (tab === 'eventos') loadEventosAdmin();
+  if (tab === 'centros') loadCentrosAdmin();
   if (tab === 'fichas') loadFichasAdmin();
   if (tab === 'videos') loadVideosAdmin();
   if (tab === 'perfiles') loadPerfilesAdmin();
@@ -674,6 +675,145 @@ async function loadLogs() {
   } catch (e) {
     list.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
   }
+}
+
+// ----------------------------------------------------------
+// Centros de Acopio - Aprobar/Rechazar/Editar/Eliminar
+// ----------------------------------------------------------
+async function loadCentrosAdmin() {
+  const list = document.getElementById('centros-list');
+  if (!list) return;
+  list.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div></div>';
+  try {
+    const estado = document.getElementById('centros-filter-estado')?.value || '';
+    const url = `/api/admin/centros-acopio${estado ? `?estado=${estado}` : ''}`;
+    const data = await adminApi(url);
+
+    if (data.centros.length === 0) {
+      list.innerHTML = '<p class="text-muted">No hay centros de acopio.</p>';
+      return;
+    }
+
+    const estadoColors = {
+      'pendiente': 'urgencia-alta',
+      'aprobado': 'urgencia-baja',
+      'rechazado': 'urgencia-critica',
+      'suspendido': 'urgencia-media',
+    };
+
+    list.innerHTML = data.centros.map(c => `
+      <div class="card" ${c.estado === 'pendiente' ? 'style="border-left:4px solid #f59e0b"' : c.estado === 'aprobado' ? 'style="border-left:4px solid #10b981"' : ''}>
+        <div class="card-meta">
+          <span class="card-meta-item"><strong>🏪 ${escapeHtml(c.nombre_centro || 'Centro de Acopio')}</strong></span>
+          <span class="urgencia-pill ${estadoColors[c.estado] || 'urgencia-media'}">${c.estado.toUpperCase()}</span>
+          <span class="card-meta-item">🕒 ${timeAgo(c.created_at)}</span>
+        </div>
+        <p class="card-description"><strong>Insumos:</strong> ${escapeHtml(c.tipo_insumos)}</p>
+        ${c.descripcion ? `<p class="card-description">${escapeHtml(c.descripcion)}</p>` : ''}
+        <div class="card-contact">
+          <div>👤 <strong>${escapeHtml(c.nombre_encargado)}</strong></div>
+          <div>📞 ${escapeHtml(c.telefono)} · <a href="${whatsappLink(c.telefono)}" target="_blank">WhatsApp</a></div>
+          ${c.direccion ? `<div>📍 ${escapeHtml(c.direccion)}</div>` : ''}
+          ${c.horario ? `<div>🕒 ${escapeHtml(c.horario)}</div>` : ''}
+        </div>
+        ${c.foto_url ? `<img src="${escapeHtml(c.foto_url)}" style="width:120px;height:120px;object-fit:cover;border-radius:6px;margin-top:8px;border:1px solid #e2e8f0">` : ''}
+        <div class="card-actions mt-2">
+          ${c.estado === 'pendiente' ? `
+            <button onclick="aprobarCentro(${c.id})" class="btn btn-sm btn-success" style="padding:6px 12px">✅ Aprobar</button>
+            <button onclick="rechazarCentro(${c.id})" class="btn btn-sm btn-danger" style="padding:6px 12px">⛔ Rechazar</button>
+          ` : c.estado === 'aprobado' ? `
+            <button onclick="suspenderCentro(${c.id})" class="btn btn-sm btn-warning" style="padding:6px 12px">⏸ Suspender</button>
+          ` : c.estado === 'suspendido' ? `
+            <button onclick="aprobarCentro(${c.id})" class="btn btn-sm btn-success" style="padding:6px 12px">✅ Reactivar</button>
+          ` : `
+            <button onclick="aprobarCentro(${c.id})" class="btn btn-sm btn-success" style="padding:6px 12px">✅ Aprobar</button>
+          `}
+          <button onclick="editarCentro(${c.id})" class="btn btn-sm btn-outline" style="padding:6px 12px">✏️ Editar</button>
+          <button onclick="eliminarCentro(${c.id})" class="btn btn-sm btn-danger" style="padding:6px 12px">🗑 Eliminar</button>
+          ${c.estado === 'aprobado' ? `<a href="/centro-acopio/${c.id}" target="_blank" class="btn btn-sm btn-outline" style="padding:6px 12px">Ver ficha →</a>` : ''}
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    list.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function aprobarCentro(id) {
+  try {
+    await adminApi(`/api/centros-acopio/${id}`, {
+      method: 'PUT',
+      body: { estado: 'aprobado' },
+    });
+    showToast(`✅ Centro #${id} aprobado`, 'success');
+    loadCentrosAdmin();
+  } catch (e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+async function rechazarCentro(id) {
+  if (!confirm(`¿Rechazar centro #${id}?`)) return;
+  try {
+    await adminApi(`/api/centros-acopio/${id}`, {
+      method: 'PUT',
+      body: { estado: 'rechazado' },
+    });
+    showToast(`✅ Centro #${id} rechazado`, 'success');
+    loadCentrosAdmin();
+  } catch (e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+async function suspenderCentro(id) {
+  if (!confirm(`¿Suspender centro #${id}? Se ocultará del mapa.`)) return;
+  try {
+    await adminApi(`/api/centros-acopio/${id}`, {
+      method: 'PUT',
+      body: { estado: 'suspendido' },
+    });
+    showToast(`✅ Centro #${id} suspendido`, 'success');
+    loadCentrosAdmin();
+  } catch (e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+async function editarCentro(id) {
+  // Buscar el centro en la lista actual
+  const data = await adminApi('/api/admin/centros-acopio');
+  const centro = data.centros.find(c => c.id === id);
+  if (!centro) return;
+
+  const nuevoNombre = prompt('Nombre del centro:', centro.nombre_centro || '');
+  if (nuevoNombre === null) return;
+  const nuevosInsumos = prompt('Tipo de insumos:', centro.tipo_insumos);
+  if (nuevosInsumos === null) return;
+  const nuevoEncargado = prompt('Nombre del encargado:', centro.nombre_encargado);
+  if (nuevoEncargado === null) return;
+  const nuevoTelefono = prompt('Teléfono:', centro.telefono);
+  if (nuevoTelefono === null) return;
+  const nuevoHorario = prompt('Horario (opcional):', centro.horario || '');
+  if (nuevoHorario === null) return;
+
+  try {
+    await adminApi(`/api/centros-acopio/${id}`, {
+      method: 'PUT',
+      body: {
+        nombre_centro: nuevoNombre,
+        tipo_insumos: nuevosInsumos,
+        nombre_encargado: nuevoEncargado,
+        telefono: nuevoTelefono,
+        horario: nuevoHorario,
+      },
+    });
+    showToast(`✅ Centro #${id} actualizado`, 'success');
+    loadCentrosAdmin();
+  } catch (e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+async function eliminarCentro(id) {
+  if (!confirm(`¿Eliminar centro #${id} permanentemente?`)) return;
+  try {
+    await adminApi(`/api/centros-acopio/${id}`, { method: 'DELETE' });
+    showToast(`✅ Centro #${id} eliminado`, 'success');
+    loadCentrosAdmin();
+  } catch (e) { showToast('❌ ' + e.message, 'error'); }
 }
 
 // ----------------------------------------------------------

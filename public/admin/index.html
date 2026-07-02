@@ -42,6 +42,7 @@
         <a href="#" data-tab="dashboard" class="active">📊 Dashboard</a>
         <a href="#" data-tab="moderar">⏳ Moderar</a>
         <a href="#" data-tab="eventos">📍 Eventos</a>
+        <a href="#" data-tab="centros">🏪 Centros de Acopio</a>
         <a href="#" data-tab="fichas">📄 Fichas IA</a>
         <a href="#" data-tab="videos">🎥 Videos</a>
         <a href="#" data-tab="perfiles">👤 Perfiles</a>
@@ -307,6 +308,22 @@
             </div>
             <button type="submit" class="btn btn-primary">💾 Guardar configuración</button>
           </form>
+        </div>
+
+        <div id="tab-centros" class="tab-content hidden">
+          <h2 class="section-title">🏪 Centros de Acopio</h2>
+          <p class="section-subtitle">Aprueba, edita o elimina los centros de acopio enviados por la gente.</p>
+          <div class="flex gap-1 mb-2" style="flex-wrap:wrap">
+            <select id="centros-filter-estado" class="form-select" style="max-width:200px" onchange="loadCentrosAdmin()">
+              <option value="">Todos los estados</option>
+              <option value="pendiente">⏳ Pendientes</option>
+              <option value="aprobado">✅ Aprobados</option>
+              <option value="rechazado">⛔ Rechazados</option>
+              <option value="suspendido">⏸ Suspendidos</option>
+            </select>
+            <button onclick="loadCentrosAdmin()" class="btn btn-sm btn-outline">🔄 Actualizar</button>
+          </div>
+          <div id="centros-list" class="loading-state">Cargando...</div>
         </div>
 
         <div id="tab-fichas" class="tab-content hidden">

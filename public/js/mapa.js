@@ -49,20 +49,22 @@ function initMap() {
 async function loadEventos() {
   try {
     const url = `/api/chulitos?limit=2000${currentFilter === 'resuelto' ? '&estado=resuelto' : '&estado=activo'}`;
-    const res = await fetch(url);
-    const data = await res.json();
+    const [eventosRes, centrosRes] = await Promise.all([
+      fetch(url),
+      fetch('/api/centros-acopio'),
+    ]);
+    const data = await eventosRes.json();
+    const centrosData = await centrosRes.json();
 
     // Limpiar markers existentes
     markers.forEach(m => map.removeLayer(m));
     markers = [];
 
-    // Agregar nuevos
+    // Agregar eventos
     for (const c of data.chulitos) {
-      // Filtrar por tipo si aplica
       if (currentFilter !== 'all' && currentFilter !== 'resuelto') {
         if (c.tipo !== currentFilter) continue;
       }
-
       const color = getMarkerColor(c);
       const marker = L.circleMarker([c.lat, c.lng], {
         radius: 10,
@@ -72,16 +74,55 @@ async function loadEventos() {
         opacity: 1,
         fillOpacity: 0.9,
       }).addTo(map);
-
       marker.bindPopup(buildPopup(c), { maxWidth: 320 });
       markers.push(marker);
     }
 
-    console.log(`Cargados ${markers.length} eventos`);
+    // Agregar centros de acopio (siempre se muestran)
+    for (const c of (centrosData.centros || [])) {
+      const icon = L.divIcon({
+        className: 'marker-custom',
+        html: `<div style="background:#3b82f6;color:white;width:32px;height:32px;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 2px 6px rgba(0,0,0,0.3)">🏪</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+      });
+      const marker = L.marker([c.lat, c.lng], { icon }).addTo(map);
+      marker.bindPopup(buildCentroAcopioPopup(c), { maxWidth: 320 });
+      markers.push(marker);
+    }
+
+    console.log(`Cargados ${markers.length} elementos`);
   } catch (e) {
     console.error('Error cargando eventos:', e);
     showToast('Error cargando eventos del mapa', 'error');
   }
+}
+
+// ----------------------------------------------------------
+// Popup para centro de acopio
+// ----------------------------------------------------------
+function buildCentroAcopioPopup(c) {
+  const fecha = new Date(c.created_at + 'Z').toLocaleString('es-VE');
+  return `
+    <div style="min-width:240px">
+      <div style="font-size:0.75rem;color:#64748b;margin-bottom:4px">🏪 CENTRO DE ACopIO · ✅ APROBADO</div>
+      <div style="font-weight:700;font-size:1rem;margin-bottom:6px">${escapeHtml(c.nombre_centro || 'Centro de Acopio')}</div>
+      <div style="font-size:0.9rem;margin-bottom:8px"><strong>Insumos:</strong> ${escapeHtml(c.tipo_insumos)}</div>
+      ${c.descripcion ? `<div style="font-size:0.85rem;color:#475569;margin-bottom:8px">${escapeHtml(c.descripcion)}</div>` : ''}
+      <div style="padding:8px;background:#f8fafc;border-radius:6px;font-size:0.85rem;margin-bottom:8px">
+        <div><strong>👤 ${escapeHtml(c.nombre_encargado)}</strong></div>
+        <div style="margin-top:4px">
+          <a href="tel:${escapeHtml(c.telefono)}" style="font-weight:600">📞 ${escapeHtml(c.telefono)}</a>
+          ${c.telefono.startsWith('0') ? `<a href="https://wa.me/58${c.telefono.substring(1).replace(/\s/g,'')}" target="_blank" style="margin-left:8px;font-weight:600">💬 WhatsApp</a>` : ''}
+        </div>
+        ${c.direccion ? `<div style="margin-top:4px;color:#64748b">📍 ${escapeHtml(c.direccion)}</div>` : ''}
+        ${c.horario ? `<div style="margin-top:4px;color:#64748b">🕒 ${escapeHtml(c.horario)}</div>` : ''}
+      </div>
+      ${c.foto_url ? `<img src="${escapeHtml(c.foto_url)}" style="width:100%;border-radius:6px;margin-bottom:8px">` : ''}
+      <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:8px">🕒 ${fecha}</div>
+      <a href="/centro-acopio/${c.id}" class="btn btn-sm btn-outline">Ver ficha →</a>
+    </div>
+  `;
 }
 
 // ----------------------------------------------------------
@@ -145,12 +186,20 @@ function openEventoForm(lat, lng) {
   tempMarker = L.marker([lat, lng], { draggable: false }).addTo(map);
 
   const formHtml = `
-    <div class="map-popup-form">
-      <div style="font-weight:700;margin-bottom:8px">📌 Nuevo evento en el mapa</div>
+    <div class="map-popup-form" style="min-width:300px;max-width:340px">
+      <div style="font-weight:700;margin-bottom:8px">📌 Nuevo en el mapa</div>
       <div style="font-size:0.85rem;color:#64748b;margin-bottom:10px">
         Coordenadas: ${lat.toFixed(5)}, ${lng.toFixed(5)}
       </div>
-      <form onsubmit="submitEvento(event, ${lat}, ${lng}); return false;" style="display:flex;flex-direction:column;gap:8px">
+
+      <!-- TOGGLE: Evento normal vs Centro de Acopio -->
+      <div style="display:flex;gap:4px;margin-bottom:10px;background:#f1f5f9;padding:4px;border-radius:6px">
+        <button type="button" id="toggle-evento" onclick="switchFormMode('evento')" style="flex:1;padding:6px;border:none;background:white;border-radius:4px;font-size:0.85rem;font-weight:600;cursor:pointer">📍 Evento</button>
+        <button type="button" id="toggle-centro" onclick="switchFormMode('centro')" style="flex:1;padding:6px;border:none;background:transparent;border-radius:4px;font-size:0.85rem;font-weight:600;cursor:pointer">🏪 Centro de Acopio</button>
+      </div>
+
+      <!-- FORMULARIO: Evento normal -->
+      <form id="form-evento" onsubmit="submitEvento(event, ${lat}, ${lng}); return false;" style="display:flex;flex-direction:column;gap:8px">
         <div>
           <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px">Tipo *</label>
           <select id="ch-tipo" required style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:4px">
@@ -189,10 +238,141 @@ function openEventoForm(lat, lng) {
           <button type="button" onclick="cancelEvento()" class="btn btn-sm btn-outline">Cancelar</button>
         </div>
       </form>
+
+      <!-- FORMULARIO: Centro de Acopio -->
+      <form id="form-centro" onsubmit="submitCentroAcopio(event, ${lat}, ${lng}); return false;" style="display:none;flex-direction:column;gap:8px">
+        <div style="padding:6px 8px;background:#dbeafe;border-radius:4px;font-size:0.8rem;color:#1e40af;margin-bottom:4px">
+          ℹ️ Los centros de acopio requieren aprobación del admin antes de publicarse.
+        </div>
+        <div>
+          <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px">Nombre del encargado *</label>
+          <input id="ca-encargado" type="text" required placeholder="Nombre y apellido" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:4px">
+        </div>
+        <div>
+          <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px">Teléfono *</label>
+          <input id="ca-telefono" type="tel" required placeholder="0414-XXX-XXXX" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:4px">
+        </div>
+        <div>
+          <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px">Nombre del centro (opcional)</label>
+          <input id="ca-nombre-centro" type="text" placeholder="Ej: Centro de Acopio Las Mercedes" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:4px">
+        </div>
+        <div>
+          <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px">Tipo de insumos y ayuda que manejan *</label>
+          <textarea id="ca-insumos" required placeholder="Ej: alimentos no perecederos, agua, ropa, medicinas, materiales de construcción..." style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:4px;min-height:60px"></textarea>
+        </div>
+        <div>
+          <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px">Dirección (opcional)</label>
+          <input id="ca-direccion" type="text" placeholder="Calle, sector, referencia" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:4px">
+        </div>
+        <div>
+          <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px">Horario (opcional)</label>
+          <input id="ca-horario" type="text" placeholder="Ej: L-V 8am-5pm" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:4px">
+        </div>
+        <div>
+          <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px">Foto del centro (opcional)</label>
+          <input id="ca-foto" type="file" accept="image/*" onchange="uploadCentroFoto()" style="width:100%;padding:4px;border:1px solid #e2e8f0;border-radius:4px;font-size:0.8rem">
+          <div id="ca-foto-preview" style="margin-top:4px"></div>
+          <input type="hidden" id="ca-foto-url">
+        </div>
+        <div style="display:flex;gap:4px;margin-top:4px">
+          <button type="submit" class="btn btn-sm btn-primary" style="flex:1">Enviar para aprobación</button>
+          <button type="button" onclick="cancelEvento()" class="btn btn-sm btn-outline">Cancelar</button>
+        </div>
+      </form>
     </div>
   `;
 
-  tempMarker.bindPopup(formHtml, { maxWidth: 320, minWidth: 280 }).openPopup();
+  tempMarker.bindPopup(formHtml, { maxWidth: 340, minWidth: 300 }).openPopup();
+}
+
+// ----------------------------------------------------------
+// Cambiar entre modo Evento y Centro de Acopio
+// ----------------------------------------------------------
+function switchFormMode(mode) {
+  const formEvento = document.getElementById('form-evento');
+  const formCentro = document.getElementById('form-centro');
+  const btnEvento = document.getElementById('toggle-evento');
+  const btnCentro = document.getElementById('toggle-centro');
+
+  if (mode === 'evento') {
+    formEvento.style.display = 'flex';
+    formCentro.style.display = 'none';
+    btnEvento.style.background = 'white';
+    btnCentro.style.background = 'transparent';
+  } else {
+    formEvento.style.display = 'none';
+    formCentro.style.display = 'flex';
+    btnEvento.style.background = 'transparent';
+    btnCentro.style.background = 'white';
+  }
+}
+
+// ----------------------------------------------------------
+// Subir foto del centro de acopio a R2
+// ----------------------------------------------------------
+async function uploadCentroFoto() {
+  const fileInput = document.getElementById('ca-foto');
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const preview = document.getElementById('ca-foto-preview');
+  preview.innerHTML = '<div class="spinner spinner-dark"></div> Subiendo...';
+
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.ok) {
+      document.getElementById('ca-foto-url').value = data.url;
+      preview.innerHTML = `<img src="${data.url}" style="width:100%;max-height:120px;object-fit:cover;border-radius:4px;border:1px solid #e2e8f0">`;
+    } else {
+      preview.innerHTML = '<small style="color:#dc2626">Error al subir foto</small>';
+    }
+  } catch (e) {
+    preview.innerHTML = '<small style="color:#dc2626">Error: ' + e.message + '</small>';
+  }
+}
+
+// ----------------------------------------------------------
+// Enviar centro de acopio
+// ----------------------------------------------------------
+async function submitCentroAcopio(event, lat, lng) {
+  event.preventDefault();
+  const btn = event.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Enviando...';
+
+  const body = {
+    nombre_encargado: document.getElementById('ca-encargado').value,
+    telefono: document.getElementById('ca-telefono').value,
+    nombre_centro: document.getElementById('ca-nombre-centro').value,
+    tipo_insumos: document.getElementById('ca-insumos').value,
+    direccion: document.getElementById('ca-direccion').value,
+    horario: document.getElementById('ca-horario').value,
+    foto_url: document.getElementById('ca-foto-url').value,
+    ubicacion_texto: document.getElementById('ch-ubic')?.value || '',
+    lat,
+    lng,
+  };
+
+  try {
+    const res = await fetch('/api/centros-acopio', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error');
+
+    showToast('✅ Centro de acopio enviado. Será revisado por el admin.', 'success', 6000);
+    map.closePopup();
+    if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; }
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Enviar para aprobación';
+  }
 }
 
 // ----------------------------------------------------------
