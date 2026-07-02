@@ -37,11 +37,16 @@
       <!-- Tipo de contenido -->
       <div class="form-group">
         <label class="form-label">¿Qué tipo de contenido vas a repostear?</label>
-        <div class="grid-2">
+        <div class="grid-2" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
           <label style="padding:10px;border:1px solid var(--color-border);border-radius:6px;cursor:pointer;text-align:center" id="lbl-fb">
             <input type="radio" name="tipo_contenido" value="facebook_embed" checked onchange="switchTipo()">
             <strong>📘 Embed Facebook</strong>
-            <div class="text-sm text-muted">Pega el código iframe</div>
+            <div class="text-sm text-muted">Un iframe</div>
+          </label>
+          <label style="padding:10px;border:1px solid var(--color-border);border-radius:6px;cursor:pointer;text-align:center" id="lbl-multi">
+            <input type="radio" name="tipo_contenido" value="multiple_embed" onchange="switchTipo()">
+            <strong>📚 Múltiples (10+)</strong>
+            <div class="text-sm text-muted">Varios iframes a la vez</div>
           </label>
           <label style="padding:10px;border:1px solid var(--color-border);border-radius:6px;cursor:pointer;text-align:center" id="lbl-img">
             <input type="radio" name="tipo_contenido" value="imagen_url" onchange="switchTipo()">
@@ -82,6 +87,24 @@
           <div id="embed-preview" class="mt-2"></div>
         </div>
 
+        <!-- Campo MÚLTIPLES: pegas varios iframes a la vez -->
+        <div class="form-group hidden" id="campo-multiple">
+          <label class="form-label">📋 Pega aquí TODOS los códigos iframe de Facebook *</label>
+          <textarea id="multiple_embed" class="form-textarea" style="min-height:200px;font-family:var(--font-mono);font-size:0.85rem"
+            placeholder="Pega aquí todos los códigos &lt;iframe&gt; de Facebook, uno tras otro. El sistema los detecta automáticamente."
+            oninput="onMultipleChange()"></textarea>
+          <div class="form-help">
+            💡 <strong>Cómo funciona:</strong><br>
+            1. Ve a Facebook y copia varios códigos "Insertar" (uno por cada post que quieras repostear)<br>
+            2. Pégalos TODOS en el campo de arriba (pueden ir separados por espacios, saltos de línea o cualquier texto)<br>
+            3. El sistema detecta automáticamente cada <code>&lt;iframe&gt;</code><br>
+            4. Cada iframe generará una ficha independiente<br>
+            5. Clic en <strong>"Crear todas las fichas"</strong> al final
+          </div>
+          <div id="multiple-count" class="mt-2"></div>
+          <div id="multiple-list" class="mt-2"></div>
+        </div>
+
         <!-- Campo imagen URL -->
         <div class="form-group hidden" id="campo-imagen">
           <label class="form-label">URL de la imagen *</label>
@@ -99,6 +122,7 @@
 
         <hr class="mb-2 mt-2" style="border:none;border-top:1px solid var(--color-border)">
 
+        <div id="form-extras">
         <!-- Datos del contenido -->
         <div class="form-group" id="group-titulo">
           <label class="form-label">Título <span id="titulo-req" class="req">*</span></label>
@@ -201,11 +225,14 @@
             <input id="lng" type="number" step="any" class="form-input" placeholder="-66.9036">
           </div>
         </div>
+        </div><!-- /form-extras -->
 
-        <button type="submit" class="btn btn-primary btn-lg btn-block">📤 Publicar repost</button>
+        <button type="submit" id="btn-submit-normal" class="btn btn-primary btn-lg btn-block">📤 Publicar repost</button>
+        <button type="button" id="btn-submit-multiple" class="btn btn-success btn-lg btn-block" style="display:none" onclick="crearMultiplesFichas()">📚 Crear todas las fichas</button>
       </form>
 
       <div id="resultado" class="mt-3"></div>
+      <div id="resultado-multiple" class="mt-3"></div>
     </div>
   </div>
 
@@ -233,14 +260,32 @@
     function switchTipo() {
       const tipo = document.querySelector('input[name="tipo_contenido"]:checked').value;
       document.getElementById('campo-embed').classList.toggle('hidden', tipo !== 'facebook_embed');
+      document.getElementById('campo-multiple').classList.toggle('hidden', tipo !== 'multiple_embed');
       document.getElementById('campo-imagen').classList.toggle('hidden', tipo !== 'imagen_url');
 
       // Resaltar el seleccionado
-      ['lbl-fb', 'lbl-img', 'lbl-vid', 'lbl-manual'].forEach(id => {
+      ['lbl-fb', 'lbl-multi', 'lbl-img', 'lbl-vid', 'lbl-manual'].forEach(id => {
         document.getElementById(id).style.background = '';
       });
-      const map = { facebook_embed: 'lbl-fb', imagen_url: 'lbl-img', video_url: 'lbl-vid', manual: 'lbl-manual' };
+      const map = {
+        facebook_embed: 'lbl-fb',
+        multiple_embed: 'lbl-multi',
+        imagen_url: 'lbl-img',
+        video_url: 'lbl-vid',
+        manual: 'lbl-manual'
+      };
       document.getElementById(map[tipo]).style.background = '#dbeafe';
+
+      // Mostrar/ocultar el botón de submit según el modo
+      const btnNormal = document.getElementById('btn-submit-normal');
+      const btnMultiple = document.getElementById('btn-submit-multiple');
+      if (btnNormal) btnNormal.style.display = (tipo === 'multiple_embed') ? 'none' : '';
+      if (btnMultiple) btnMultiple.style.display = (tipo === 'multiple_embed') ? '' : 'none';
+
+      // Ocultar campos que no aplican en modo múltiple
+      const camposExtras = ['group-titulo', 'group-descripcion'];
+      const formExtra = document.getElementById('form-extras');
+      if (formExtra) formExtra.style.display = (tipo === 'multiple_embed') ? 'none' : '';
 
       // Ajustar requerido/placeholder según el tipo
       const tituloInput = document.getElementById('titulo');
@@ -454,6 +499,175 @@
     document.getElementById('descripcion').addEventListener('input', function() {
       this.dataset.userEdited = 'true';
     });
+
+    // ============================================================
+    // MODO MÚLTIPLE: detectar varios iframes en un texto grande
+    // ============================================================
+    let iframesDetectados = [];
+
+    function onMultipleChange() {
+      const texto = document.getElementById('multiple_embed').value;
+      const countEl = document.getElementById('multiple-count');
+      const listEl = document.getElementById('multiple-list');
+
+      // Regex para encontrar todos los <iframe...>...</iframe>
+      const regex = /<iframe[^>]*>[\s\S]*?<\/iframe>/gi;
+      const matches = texto.match(regex) || [];
+
+      iframesDetectados = matches.map((iframe, idx) => {
+        // Extraer URL del src
+        const srcMatch = iframe.match(/src=["']([^"']+)["']/i);
+        let urlOriginal = '';
+        if (srcMatch) {
+          const hrefMatch = srcMatch[1].match(/[?&]href=([^&]+)/);
+          if (hrefMatch) {
+            try { urlOriginal = decodeURIComponent(hrefMatch[1]); }
+            catch { urlOriginal = srcMatch[1]; }
+          } else {
+            urlOriginal = srcMatch[1];
+          }
+        }
+
+        // Generar título
+        let titulo = 'Post de Facebook';
+        let tipoLabel = 'post';
+        let m = urlOriginal.match(/facebook\.com\/reel\/([^\/\?]+)/i);
+        if (m) {
+          titulo = `Video Reel de Facebook (${m[1].slice(0, 12)}...)`;
+          tipoLabel = 'reel';
+        } else {
+          m = urlOriginal.match(/facebook\.com\/([^\/]+)\/videos\/([^\/\?]+)/i);
+          if (m) {
+            titulo = `Video de ${m[1].replace(/[._-]/g, ' ')} (Facebook)`;
+            tipoLabel = 'video';
+          } else {
+            m = urlOriginal.match(/facebook\.com\/([^\/]+)\/posts\/([^\/\?]+)/i);
+            if (m) {
+              titulo = `Post de ${m[1].replace(/[._-]/g, ' ')} (Facebook)`;
+              tipoLabel = 'post';
+            } else {
+              m = urlOriginal.match(/facebook\.com\/share\/(?:p|v|post)\/([^\/\?]+)/i);
+              if (m) {
+                titulo = `Post de Facebook (${m[1]})`;
+              }
+            }
+          }
+        }
+
+        return { idx: idx + 1, iframe, urlOriginal, titulo, tipoLabel, estado: 'pendiente' };
+      });
+
+      // Mostrar conteo
+      if (iframesDetectados.length === 0) {
+        countEl.innerHTML = '<div class="text-muted">No se detectaron iframes todavía. Pega los códigos arriba.</div>';
+        listEl.innerHTML = '';
+      } else {
+        countEl.innerHTML = `<div class="alert alert-success" style="padding:8px"><strong>✅ ${iframesDetectados.length} iframe(s) detectado(s)</strong> — cada uno generará una ficha independiente</div>`;
+        listEl.innerHTML = iframesDetectados.map(ifd => `
+          <div class="card" style="padding:8px;margin-bottom:6px" id="iframe-card-${ifd.idx}">
+            <div class="flex" style="justify-content:space-between;align-items:center">
+              <div style="flex:1;min-width:0">
+                <div class="text-sm font-bold">#${ifd.idx} — ${escapeHtml(ifd.titulo)}</div>
+                <div class="text-sm text-muted" style="word-break:break-all">🔗 ${escapeHtml(ifd.urlOriginal.slice(0, 80))}${ifd.urlOriginal.length > 80 ? '...' : ''}</div>
+                <div class="text-sm" style="color:#6366f1">📋 Tipo: ${ifd.tipoLabel} · Estado: <span id="estado-${ifd.idx}">⏳ pendiente</span></div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Crear todas las fichas (una por iframe)
+    async function crearMultiplesFichas() {
+      if (iframesDetectados.length === 0) {
+        showToast('❌ No hay iframes para procesar', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btn-submit-multiple');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Creando fichas...';
+
+      const resultado = document.getElementById('resultado-multiple');
+      resultado.innerHTML = `<div class="alert alert-info">⏳ Procesando ${iframesDetectados.length} iframe(s)...</div>`;
+
+      let exitosos = 0;
+      let fallidos = 0;
+      const links = [];
+
+      for (const ifd of iframesDetectados) {
+        // Actualizar estado visual
+        const estadoEl = document.getElementById(`estado-${ifd.idx}`);
+        if (estadoEl) {
+          estadoEl.textContent = '⏳ procesando...';
+          estadoEl.style.color = '#f59e0b';
+        }
+
+        const body = {
+          tipo_contenido: 'facebook_embed',
+          embed_html: ifd.iframe,
+          tipo: 'informacion',
+          sector_id: 8,
+          urgencia: 'media',
+        };
+
+        try {
+          const res = await fetch('/api/admin/repostear', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (data.ok) {
+            exitosos++;
+            if (estadoEl) {
+              estadoEl.textContent = '✅ creado';
+              estadoEl.style.color = '#10b981';
+            }
+            links.push({ idx: ifd.idx, titulo: ifd.titulo, url: data.reporte_url, urlCompleta: data.reporte_url_completa });
+          } else {
+            fallidos++;
+            if (estadoEl) {
+              estadoEl.textContent = '❌ error: ' + (data.error || '').slice(0, 50);
+              estadoEl.style.color = '#dc2626';
+            }
+          }
+        } catch (e) {
+          fallidos++;
+          if (estadoEl) {
+            estadoEl.textContent = '❌ ' + e.message.slice(0, 50);
+            estadoEl.style.color = '#dc2626';
+          }
+        }
+      }
+
+      // Mostrar resultado final
+      resultado.innerHTML = `
+        <div class="alert alert-success">
+          ✅ <strong>${exitosos}</strong> ficha(s) creada(s) correctamente
+          ${fallidos > 0 ? `· ❌ <strong>${fallidos}</strong> fallida(s)` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${links.map(l => `
+            <div class="card" style="padding:8px">
+              <div class="text-sm font-bold">#${l.idx} — ${escapeHtml(l.titulo)}</div>
+              <div class="flex gap-1 mt-1" style="flex-wrap:wrap">
+                <a href="${l.url}" target="_blank" class="btn btn-sm btn-primary">Ver ficha →</a>
+                <button onclick="navigator.clipboard.writeText('${l.urlCompleta}');showToast('URL copiada','success')" class="btn btn-sm btn-outline">📋 Copiar URL</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="mt-2">
+          <a href="/noticias" class="btn btn-primary">📰 Ver todas en Noticias</a>
+          <button onclick="document.getElementById('multiple_embed').value='';onMultipleChange();" class="btn btn-outline">🔄 Pegar más</button>
+        </div>
+      `;
+
+      btn.disabled = false;
+      btn.textContent = '📚 Crear todas las fichas';
+      window.scrollTo({ top: resultado.offsetTop - 100, behavior: 'smooth' });
+    }
 
     // Preview de imagen
     function previewImagen() {
