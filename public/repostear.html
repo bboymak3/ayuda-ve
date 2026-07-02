@@ -453,7 +453,7 @@
         const metaData = await metaRes.json();
 
         if (metaData.ok && metaData.metadata && metaData.metadata.titulo) {
-          // ¡Tenemos el título real!
+          // ¡Tenemos el título y descripción reales!
           const tituloReal = metaData.metadata.titulo;
           const descReal = metaData.metadata.descripcion || '';
           const imgReal = metaData.metadata.imagen || '';
@@ -463,19 +463,23 @@
             document.getElementById('titulo').value = tituloReal;
           }
 
-          // Actualizar descripción con la real de Facebook
+          // Actualizar descripción con la REAL de Facebook (no placeholder)
           if (!document.getElementById('descripcion').dataset.userEdited && descReal) {
-            document.getElementById('descripcion').value = descReal;
+            // Limitar a 1000 caracteres para no exceder la BD
+            const descParaMostrar = descReal.length > 1000 ? descReal.slice(0, 1000) + '...' : descReal;
+            document.getElementById('descripcion').value = descParaMostrar;
+            // Marcar como editado para que no se sobreescriba
+            document.getElementById('descripcion').dataset.userEdited = 'true';
           }
 
           // Mostrar estado de éxito con datos reales
           status.innerHTML = `
             <div class="alert alert-success" style="padding:8px;font-size:0.85rem">
-              ✅ <strong>¡Título real obtenido de Facebook!</strong><br>
+              ✅ <strong>¡Título y descripción reales obtenidos de Facebook!</strong><br>
               📋 Tipo: ${tipoLabel}<br>
               🔗 URL: <a href="${urlOriginal}" target="_blank" style="word-break:break-all">${urlOriginal.slice(0, 60)}${urlOriginal.length > 60 ? '...' : ''}</a><br>
-              📝 <strong>Título:</strong> ${escapeHtml(tituloReal)}<br>
-              ${descReal ? `📄 <strong>Descripción:</strong> ${escapeHtml(descReal.slice(0, 100))}${descReal.length > 100 ? '...' : ''}<br>` : ''}
+              📝 <strong>Título:</strong> ${escapeHtml(tituloReal.slice(0, 100))}${tituloReal.length > 100 ? '...' : ''}<br>
+              ${descReal ? `📄 <strong>Descripción:</strong> ${escapeHtml(descReal.slice(0, 120))}${descReal.length > 120 ? '...' : ''}<br>` : ''}
               ${imgReal ? `🖼️ <strong>Imagen:</strong> detectada<br>` : ''}
             </div>
           `;
@@ -639,7 +643,9 @@
           tipo_contenido: 'facebook_embed',
           embed_html: ifd.iframe,
           titulo: ifd.tituloReal || ifd.titulo,
-          descripcion: ifd.descripcionReal || `Ver publicación original de Facebook (mostrada abajo como embed). Tipo: ${ifd.tipoLabel}.`,
+          descripcion: ifd.descripcionReal
+            ? (ifd.descripcionReal.length > 1000 ? ifd.descripcionReal.slice(0, 1000) + '...' : ifd.descripcionReal)
+            : `Ver publicación original de Facebook (mostrada abajo como embed). Tipo: ${ifd.tipoLabel}.`,
           tipo: 'informacion',
           sector_id: 8,
           urgencia: 'media',

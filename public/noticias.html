@@ -125,40 +125,47 @@
         ? `<h3 class="card-title"><a href="${escapeHtml(fuenteUrl)}" target="_blank" rel="noopener">${escapeHtml(p.titulo || 'Sin título')}</a></h3>`
         : `<h3 class="card-title">${escapeHtml(p.titulo || 'Sin título')}</h3>`;
 
+      // Descripción corta para noticias (más compacta)
+      const descCorta = (p.descripcion || '').slice(0, 200);
+      const descTruncada = (p.descripcion || '').length > 200 ? '...' : '';
+
+      // Solo mostrar contacto si hay datos (en noticias no siempre es relevante)
+      const hayContacto = p.contacto_nombre || p.contacto_telefono || ubicacion;
+
       return `
         <div class="card">
           <div class="card-meta">
             <span class="card-meta-item"><strong>${tipoLabel}</strong></span>
             <span class="urgencia-pill urgencia-${p.urgencia}">${p.urgencia.toUpperCase()}</span>
             ${sectorInfo ? `<span class="card-meta-item">${sectorInfo}</span>` : ''}
-            <span class="card-meta-item">${fuenteLabel}</span>
             <span class="card-meta-item">🕒 ${timeAgo(p.created_at)}</span>
           </div>
           ${tituloHTML}
-          <p class="card-description">${escapeHtml((p.descripcion || '').slice(0, 500))}${(p.descripcion || '').length > 500 ? '...' : ''}</p>
+          ${descCorta ? `<p class="card-description">${escapeHtml(descCorta)}${descTruncada}</p>` : ''}
 
           ${embedHtml ? `
-            <div class="embed-wrap" style="margin:8px 0;padding-bottom:120%;min-height:300px">
+            <div class="embed-wrap" style="margin:6px 0;padding-bottom:100%;min-height:280px">
               ${embedHtml}
             </div>
           ` : ''}
 
           ${fotos && fotos.length > 0 ? `
-            <div style="margin:6px 0">
-              <img src="${escapeHtml(fotos[0])}" style="width:100%;max-height:350px;object-fit:cover;border-radius:6px" loading="lazy">
-              ${fotos.length > 1 ? `<div class="text-sm text-muted mt-1">+${fotos.length - 1} imagen(es) más</div>` : ''}
+            <div style="margin:4px 0">
+              <img src="${escapeHtml(fotos[0])}" style="width:100%;max-height:300px;object-fit:cover;border-radius:6px" loading="lazy">
             </div>
           ` : ''}
 
-          <div class="card-contact">
-            ${p.contacto_nombre ? `<div>👤 ${escapeHtml(p.contacto_nombre)}</div>` : ''}
-            ${p.contacto_telefono ? `<div>📞 <a href="tel:${escapeHtml(p.contacto_telefono)}">${escapeHtml(p.contacto_telefono)}</a> · <a href="${whatsappLink(p.contacto_telefono)}" target="_blank">WhatsApp</a></div>` : ''}
-            ${ubicacion ? `<div style="color:#64748b">📍 ${escapeHtml(ubicacion)}</div>` : ''}
-          </div>
+          ${hayContacto ? `
+            <div class="card-contact" style="margin-top:4px">
+              ${p.contacto_nombre ? `<div>👤 ${escapeHtml(p.contacto_nombre)}</div>` : ''}
+              ${p.contacto_telefono ? `<div>📞 <a href="tel:${escapeHtml(p.contacto_telefono)}">${escapeHtml(p.contacto_telefono)}</a></div>` : ''}
+              ${ubicacion ? `<div style="color:#64748b">📍 ${escapeHtml(ubicacion)}</div>` : ''}
+            </div>
+          ` : ''}
 
-          <div class="card-actions" style="flex-wrap:wrap">
-            <a href="${p.url}" class="btn btn-sm btn-primary">Ver ficha completa →</a>
-            ${fuenteUrl ? `<a href="${escapeHtml(fuenteUrl)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline">${plataformaIcon} Ver en fuente original →</a>` : ''}
+          <div class="card-actions" style="flex-wrap:wrap;margin-top:6px">
+            <a href="${p.url}" class="btn btn-sm btn-primary">Ver ficha →</a>
+            ${fuenteUrl ? `<a href="${escapeHtml(fuenteUrl)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline">${plataformaIcon} Fuente original</a>` : ''}
           </div>
         </div>
       `;
