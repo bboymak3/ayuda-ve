@@ -91,12 +91,28 @@ function extractTag(html, name) {
 function decodeEntities(str) {
   if (!str) return str;
   return str
+    // Entidades hexadecimales: &#xNN; o &#XNN;
+    .replace(/&#x([0-9a-fA-F]+);/g, (m, hex) => {
+      try { return String.fromCodePoint(parseInt(hex, 16)); }
+      catch { return m; }
+    })
+    // Entidades decimales: &#NN;
+    .replace(/&#(\d+);/g, (m, code) => {
+      try { return String.fromCodePoint(parseInt(code, 10)); }
+      catch { return m; }
+    })
+    // Entidades nombradas comunes
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/&#x27;/g, "'")
+    .replace(/&apos;/g, "'")
     .replace(/&nbsp;/g, ' ')
-    .replace(/&#(\d+);/g, (m, code) => String.fromCharCode(parseInt(code, 10)));
+    .replace(/&middot;/g, '·')
+    .replace(/&hellip;/g, '…')
+    .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–')
+    .replace(/&laquo;/g, '«')
+    .replace(/&raquo;/g, '»');
 }

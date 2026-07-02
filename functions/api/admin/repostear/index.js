@@ -90,9 +90,53 @@ export async function onRequestPost({ env, request }) {
     }
   }
 
-  // Si es FB embed y no hay descripción, usar placeholder
+  // Si es FB embed y no hay título o descripción, intentar obtenerlos de Facebook
+  if (body.tipo_contenido === 'facebook_embed' && body.url_origen && (!titulo || !descripcion)) {
+    try {
+      const fbMetaUrl = `https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(body.url_origen)}`;
+      // Hacer fetch a la URL original para leer metadatos Open Graph
+      const fbRes = await fetch(body.url_origen, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; FacebookBot/1.0; +https://developers.facebook.com/docs/sharing/webmasters/crawler)',
+          'Accept': 'text/html',
+          'Accept-Language': 'es-ES,es;q=0.9',
+        },
+      });
+      if (fbRes.ok) {
+        const fbHtml = await fbRes.text();
+        // Extraer og:title
+        if (!titulo) {
+          const m1 = fbHtml.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
+                  || fbHtml.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i);
+          if (m1) titulo = decodeEntitiesBackend(m1[1].trim()).slice(0, 200);
+        }
+        // Extraer og:description
+        if (!descripcion) {
+          const m2 = fbHtml.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i)
+                  || fbHtml.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i);
+          if (m2) descripcion = decodeEntitiesBackend(m2[1].trim()).slice(0, 1000);
+        }
+      }
+    } catch (e) {
+      console.log('Backend: no se pudo obtener metadata de FB:', e.message);
+    }
+  }
+
+  // Si es FB embed y sigue sin descripción, usar placeholder
   if (!descripcion && body.tipo_contenido === 'facebook_embed') {
     descripcion = 'Ver publicación original de Facebook (mostrada abajo como embed).';
+  }
+
+  // Si sigue sin título, generar de la URL
+  if (!titulo && body.url_origen) {
+    const urlStr = String(body.url_origen);
+    let m = urlStr.match(/facebook\.com\/reel\/([^\/\?]+)/i);
+    if (m) titulo = `Video Reel de Facebook (${m[1].slice(0, 12)}...)`;
+    else {
+      m = urlStr.match(/facebook\.com\/([^\/]+)\/posts\/([^\/\?]+)/i);
+      if (m) titulo = `Post de ${m[1].replace(/[._-]/g, ' ')} (Facebook)`;
+      else titulo = 'Post de Facebook';
+    }
   }
 
   if (!titulo) {
@@ -229,4 +273,31 @@ function detectarPlataforma(url) {
   if (u.includes('tiktok')) return 'tiktok';
   if (u.includes('twitter') || u.includes('x.com')) return 'twitter';
   return 'otro';
+}
+
+// Decodificar entidades HTML (emojis, acentos, etc.)
+function decodeEntitiesBackend(str) {
+  if (!str) return str;
+  return str
+    .replace(/&#x([0-9a-fA-F]+);/g, (m, hex) => {
+      try { return String.fromCodePoint(parseInt(hex, 16)); }
+      catch { return m; }
+    })
+    .replace(/&#(\d+);/g, (m, code) => {
+      try { return String.fromCodePoint(parseInt(code, 10)); }
+      catch { return m; }
+    })
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&middot;/g, '·')
+    .replace(/&hellip;/g, '…')
+    .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–')
+    .replace(/&laquo;/g, '«')
+    .replace(/&raquo;/g, '»');
 }
