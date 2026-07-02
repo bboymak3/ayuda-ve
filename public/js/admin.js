@@ -114,6 +114,8 @@ function switchTab(tab) {
   if (tab === 'dashboard') loadDashboard();
   if (tab === 'moderar') loadModerar();
   if (tab === 'eventos') loadEventosAdmin();
+  if (tab === 'fichas') loadFichasAdmin();
+  if (tab === 'videos') loadVideosAdmin();
   if (tab === 'perfiles') loadPerfilesAdmin();
   if (tab === 'abuso') loadAbusos();
   if (tab === 'categorias') loadCategoriasAdmin();
@@ -253,7 +255,10 @@ async function loadModerar() {
 async function moderar(accion, entidad, id) {
   if (!confirm(`¿${accion} ${entidad} ${id}?`)) return;
   try {
-    await adminApi(`/api/admin/moderar/${accion}/${entidad}/${id}`, { method: 'POST' });
+    await adminApi('/api/admin/moderar', {
+      method: 'POST',
+      body: { accion, entidad, id }
+    });
     showToast(`✅ ${entidad} ${id}: ${accion}`, 'success');
     loadModerar();
   } catch (e) {
@@ -325,7 +330,10 @@ function renderEventosAdmin(eventos) {
 async function eliminarEvento(id) {
   if (!confirm(`¿Eliminar el evento #${id}?\n\nEsto lo ocultará del mapa y de la lista pública. No se puede deshacer.`)) return;
   try {
-    await adminApi(`/api/admin/moderar/eliminar/chulito/${id}`, { method: 'POST' });
+    await adminApi('/api/admin/moderar', {
+      method: 'POST',
+      body: { accion: 'eliminar', entidad: 'chulito', id }
+    });
     showToast(`✅ Evento #${id} eliminado`, 'success');
     loadEventosAdmin();
   } catch (e) {
@@ -337,7 +345,10 @@ async function eliminarEvento(id) {
 async function resolverEvento(id) {
   if (!confirm(`¿Marcar el evento #${id} como resuelto?\n\nSe cambiará a color verde en el mapa.`)) return;
   try {
-    await adminApi(`/api/admin/moderar/resolver/chulito/${id}`, { method: 'POST' });
+    await adminApi('/api/admin/moderar', {
+      method: 'POST',
+      body: { accion: 'resolver', entidad: 'chulito', id }
+    });
     showToast(`✅ Evento #${id} marcado como resuelto`, 'success');
     loadEventosAdmin();
   } catch (e) {
@@ -662,6 +673,160 @@ async function loadLogs() {
     list.innerHTML = '<p class="text-muted">Logs detallados próximamente. Por ahora revisa el dashboard.</p>';
   } catch (e) {
     list.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+// ----------------------------------------------------------
+// Fichas IA (Reportes) - Editar y Eliminar
+// ----------------------------------------------------------
+let fichasCache = [];
+
+async function loadFichasAdmin() {
+  const list = document.getElementById('fichas-list');
+  if (!list) return;
+  list.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div></div>';
+  try {
+    const tipo = document.getElementById('fichas-filter-tipo')?.value || '';
+    const creador = document.getElementById('fichas-filter-creador')?.value || '';
+    let url = '/api/admin/fichas?limit=200';
+    if (tipo) url += `&tipo=${tipo}`;
+    if (creador) url += `&creador=${creador}`;
+
+    const data = await adminApi(url);
+    fichasCache = data.fichas;
+    renderFichasAdmin(fichasCache);
+  } catch (e) {
+    list.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function searchFichas() {
+  const q = document.getElementById('fichas-search').value.toLowerCase();
+  if (!q) { renderFichasAdmin(fichasCache); return; }
+  const filtered = fichasCache.filter(f =>
+    (f.titulo || '').toLowerCase().includes(q) ||
+    (f.descripcion || '').toLowerCase().includes(q) ||
+    (f.contacto_nombre || '').toLowerCase().includes(q)
+  );
+  renderFichasAdmin(filtered);
+}
+
+function renderFichasAdmin(fichas) {
+  const list = document.getElementById('fichas-list');
+  if (fichas.length === 0) {
+    list.innerHTML = '<p class="text-muted">No hay fichas.</p>';
+    return;
+  }
+  list.innerHTML = fichas.map(f => `
+    <div class="card" ${f.creado_por === 'admin' ? 'style="border-left:4px solid #8b5cf6"' : ''}>
+      <div class="card-meta">
+        <span class="urgencia-pill urgencia-${f.urgencia}">${f.urgencia}</span>
+        <span class="card-meta-item">${f.sector_icono || ''} ${escapeHtml(f.sector_nombre || '')}</span>
+        <span class="card-meta-item">${f.tipo}</span>
+        ${f.creado_por === 'admin' ? '<span class="urgencia-pill" style="background:#ede9fe;color:#5b21b6">🤖 IA</span>' : '<span class="urgencia-pill urgencia-media">👤 Usuario</span>'}
+        <span class="card-meta-item">🕒 ${timeAgo(f.created_at)}</span>
+      </div>
+      <h3 class="card-title">${escapeHtml(f.titulo)}</h3>
+      <p class="card-description">${escapeHtml((f.descripcion || '').slice(0, 200))}${(f.descripcion || '').length > 200 ? '...' : ''}</p>
+      ${f.contacto_nombre || f.contacto_telefono ? `<div class="text-sm">👤 ${escapeHtml(f.contacto_nombre || '')} ${f.contacto_telefono ? '· 📞 ' + escapeHtml(f.contacto_telefono) : ''}</div>` : ''}
+      ${f.transcripcion ? `<div class="text-sm text-muted mt-1">📝 Tiene transcripción IA (${f.transcripcion.length} chars)</div>` : ''}
+      <div class="card-actions mt-2">
+        <button onclick="editarFicha(${f.id})" class="btn btn-sm btn-outline" style="padding:6px 12px">✏️ Editar</button>
+        <button onclick="eliminarFicha(${f.id})" class="btn btn-sm btn-danger" style="padding:6px 12px">🗑 Eliminar</button>
+        <a href="/reporte/${f.id}" target="_blank" class="btn btn-sm btn-outline" style="padding:6px 12px">Ver →</a>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function eliminarFicha(id) {
+  if (!confirm(`¿Eliminar la ficha #${id}?\n\nEsto borra permanentemente el reporte. No se puede deshacer.`)) return;
+  try {
+    await adminApi(`/api/admin/fichas/${id}`, { method: 'DELETE' });
+    showToast(`✅ Ficha #${id} eliminada`, 'success');
+    loadFichasAdmin();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+}
+
+async function editarFicha(id) {
+  const ficha = fichasCache.find(f => f.id === id);
+  if (!ficha) return;
+
+  const nuevoTitulo = prompt('Título:', ficha.titulo);
+  if (nuevoTitulo === null) return;
+
+  const nuevaDesc = prompt('Descripción:', ficha.descripcion || '');
+  if (nuevaDesc === null) return;
+
+  const nuevoTelefono = prompt('Teléfono:', ficha.contacto_telefono || '');
+  if (nuevoTelefono === null) return;
+
+  try {
+    await adminApi(`/api/admin/fichas/${id}`, {
+      method: 'PUT',
+      body: {
+        titulo: nuevoTitulo,
+        descripcion: nuevaDesc,
+        contacto_telefono: nuevoTelefono,
+      },
+    });
+    showToast(`✅ Ficha #${id} actualizada`, 'success');
+    loadFichasAdmin();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+}
+
+// ----------------------------------------------------------
+// Videos - Eliminar registros
+// ----------------------------------------------------------
+async function loadVideosAdmin() {
+  const list = document.getElementById('videos-list');
+  if (!list) return;
+  list.innerHTML = '<div class="loading-state"><div class="spinner spinner-dark"></div></div>';
+  try {
+    const data = await adminApi('/api/admin/videos?limit=100');
+    if (data.videos.length === 0) {
+      list.innerHTML = '<p class="text-muted">No hay videos procesados todavía.</p>';
+      return;
+    }
+    list.innerHTML = data.videos.map(v => {
+      let resumen = '';
+      try { resumen = JSON.parse(v.resumen || '{}').resumen || ''; } catch {}
+      return `
+        <div class="card" ${v.estado === 'error' ? 'style="border-left:4px solid #dc2626"' : v.estado === 'completado' ? 'style="border-left:4px solid #10b981"' : ''}>
+          <div class="card-meta">
+            <span class="card-meta-item">📺 ${escapeHtml(v.plataforma || 'video')}</span>
+            <span class="urgencia-pill urgencia-${v.estado === 'completado' ? 'baja' : v.estado === 'error' ? 'critica' : 'media'}">${v.estado}</span>
+            <span class="card-meta-item">🕒 ${timeAgo(v.created_at)}</span>
+            ${v.reporte_id ? `<span class="card-meta-item">🔗 Ficha #${v.reporte_id}</span>` : ''}
+          </div>
+          <div class="text-sm text-muted">${escapeHtml(v.url_origen || '')}</div>
+          ${resumen ? `<p class="card-description mt-1">${escapeHtml(resumen)}</p>` : ''}
+          ${v.transcripcion_corta ? `<details class="mt-1"><summary class="text-sm">Ver transcripción</summary><div class="text-sm" style="padding:8px;background:#f8fafc;border-radius:4px;margin-top:4px">${escapeHtml(v.transcripcion_corta)}...</div></details>` : ''}
+          ${v.error_msg ? `<div class="alert alert-error mt-1" style="padding:6px;font-size:0.85rem">❌ ${escapeHtml(v.error_msg)}</div>` : ''}
+          <div class="card-actions mt-2">
+            <button onclick="eliminarVideo(${v.id})" class="btn btn-sm btn-danger" style="padding:6px 12px">🗑 Eliminar registro</button>
+            ${v.reporte_id ? `<a href="/reporte/${v.reporte_id}" target="_blank" class="btn btn-sm btn-outline" style="padding:6px 12px">Ver ficha →</a>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function eliminarVideo(id) {
+  if (!confirm(`¿Eliminar el registro de video #${id}?\n\nSolo borra el registro del historial. Si se creó una ficha, esta se mantiene.`)) return;
+  try {
+    await adminApi(`/api/admin/videos/${id}`, { method: 'DELETE' });
+    showToast(`✅ Video #${id} eliminado`, 'success');
+    loadVideosAdmin();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
   }
 }
 
